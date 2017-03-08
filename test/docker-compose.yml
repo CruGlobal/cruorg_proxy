@@ -1,0 +1,27 @@
+version: '3'
+services:
+  proxy:
+    build:
+      context: ../main
+    image: 056154071827.dkr.ecr.us-east-1.amazonaws.com/cruorg_proxy
+    ports:
+      - "80:80"
+    links:
+      - redis:redis
+      - web1:web1
+      - web2:web2
+    environment:
+      - WP_ADDR=http://web1
+      - AEM_ADDR=http://web2
+  web1:
+    build: ./web1
+    links:
+      - redis:redis
+  web2:
+    build: ./web2
+    links:
+      - redis:redis
+  redis:
+    image: redis
+    ports:
+      - "6380:6379"
