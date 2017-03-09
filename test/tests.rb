@@ -12,7 +12,26 @@ def run_tests(tests)
   end
 end
 
+def location(headers)
+  headers.strip.split("\n").last.split(' ').last
+end
+
 redis = Redis.new(:port => 6380, :db => 3)
+puts "REDIRECTOR TESTS"
+redis.hset('redirects:regex', "'/level'{.*}", '/level1/level%1.html')
+tests = {}
+tests["'/level'{.*}"] = [location(`curl -s --head localhost/level2`), '/level1/level2.html']
+run_tests(tests)
+redis.hdel('redirects:regex', "'/level'{.*}")
+
+redis.hset('redirects:regex', "'/level'{.*}", '/level1/level%1.html')
+tests = {}
+tests["^'/level'{.*}$"] = [location(`curl -s --head localhost/level2`), '/level1/level2.html']
+run_tests(tests)
+redis.hdel('redirects:regex', "'/level'{.*}")
+
+
+puts "\n\n"
 
 puts "UPSTREAM tests"
 # Test the default route
@@ -20,9 +39,10 @@ tests = {}
 tests['Default route'] = [`curl -s localhost`.strip, 'index']
 run_tests(tests)
 
+puts "\n"
+
 # Test level1 matching - an upstream value for /level1 should match everything under it
-puts "\nLevel 1 tests"
-redis.flushdb
+puts "Level 1 tests"
 redis.set('upstreams:/level1', 'WP_ADDR')
 tests = {}
 tests['/level1.html'] = [`curl -s localhost/level1.html`.strip, 'level1']
@@ -33,7 +53,7 @@ run_tests(tests)
 
 # Test level2 matching - an upstream value for /level1/level2 should match everything under level2, but not level1
 puts "\nLevel 2 tests"
-redis.flushdb
+redis.del('upstreams:/level1')
 redis.set('upstreams:/level1/level2', 'WP_ADDR')
 tests = {}
 tests['/level1.html'] = [`curl -s localhost/level1.html`.strip, '404']
@@ -44,7 +64,7 @@ run_tests(tests)
 
 # Test level3 matching - an upstream value for /level1/level2/level3 should match everything under level3, but not 1 or 2
 puts "\nLevel 3 tests"
-redis.flushdb
+redis.del('upstreams:/level1/level2')
 redis.set('upstreams:/level1/level2/level3', 'WP_ADDR')
 tests = {}
 tests['/level1.html'] = [`curl -s localhost/level1.html`.strip, '404']
@@ -52,7 +72,4 @@ tests['/level1/level2.html'] = [`curl -s localhost/level1/level2.html`.strip, '4
 tests['/level1/level2/level3.html'] = [`curl -s localhost/level1/level2/level3.html`.strip, 'level3']
 tests['/level1/level2/level3/level4.html'] = [`curl -s localhost/level1/level2/level3/level4.html`.strip, 'level4']
 run_tests(tests)
-
-puts "\n\n"
-puts "REDIRECTOR TESTS"
 

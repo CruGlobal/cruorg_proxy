@@ -29,7 +29,7 @@ if ok then
     table.remove(levels)
   end
 
-  red:set_keepalive(10000, 100)
+  red:set_keepalive(0, 100)
 else
   ngx.log(ngx.ERR, "failed to connect to redis: ", err)
 end
