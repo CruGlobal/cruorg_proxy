@@ -4,7 +4,7 @@ local red = redis:new()
 
 red:set_timeout(1000) -- 1 second
 
-local ok, err = red:connect('redis', 6379)
+local ok, err = red:connect(os.getenv('REDIS_PORT_6379_TCP_ADDR'), 6379)
 if ok then
   -- use db number 3
   red:select(3)
