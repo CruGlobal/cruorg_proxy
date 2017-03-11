@@ -23,39 +23,39 @@ puts 'running build'
 run 'main/build.sh', 'build failed'
 
 puts 'building test container'
-run 'test/build.sh', 'building test container failed'
+#run 'test/build.sh', 'building test container failed'
 
 
-puts 'running cruorg_proxy'
+#puts 'running cruorg_proxy'
 
 
 # clean up any failed container from a previous run.
 # Normally docker cleans up after itself when we use --rm,
 # but under some circumstances (like an invalid --link) it doesn't.
-output = `docker rm cruorg_proxy-container 2>&1`
-if $?.to_i > 0 && output.index("no such id") == nil
-  puts "unable to remove cruorg_proxy-container"
-  puts output
-  exit 1
-end
+#output = `docker rm cruorg_proxy-container 2>&1`
+#if $?.to_i > 0 && output.index("no such id") == nil
+#  puts "unable to remove cruorg_proxy-container"
+#  puts output
+#  exit 1
+#end
 
-pid = spawn({'NO_TTY' => 'true'}, 'main/run.sh')
+#pid = spawn({'NO_TTY' => 'true'}, 'main/run.sh')
 
-begin
-  sleep 8 # hopefully that's enough...
+#begin
+#  sleep 8 # hopefully that's enough...
 
-  puts 'running test'
-  run 'test/run_test_locally.sh', 'running test failed'
-  puts 'test finished successfully'
+#  puts 'running test'
+#  run 'test/run_test_locally.sh', 'running test failed'
+#  puts 'test finished successfully'
 
-ensure
-  puts "shutting down cruorg_proxy (#{pid})"
+#ensure
+#  puts "shutting down cruorg_proxy (#{pid})"
 
-  `kill #{pid}`
+#  `kill #{pid}`
 
-  Process.wait(pid)
+#  Process.wait(pid)
 
-end
+#end
 
 git_commit = ENV['GIT_COMMIT'] || `git rev-parse --verify HEAD`.strip
 build_number = ENV['BUILD_NUMBER'] || 0
