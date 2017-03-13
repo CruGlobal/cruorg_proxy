@@ -3,6 +3,8 @@ services:
   proxy:
     build:
       context: ../main
+      args:
+        - RESOLVER=127.0.0.11
     image: 056154071827.dkr.ecr.us-east-1.amazonaws.com/cruorg_proxy
     ports:
       - "80:80"
@@ -13,6 +15,7 @@ services:
     environment:
       - WP_ADDR=http://web1
       - AEM_ADDR=http://web2
+      - REDIS_PORT_6379_TCP_ADDR=redis
   web1:
     build: ./web1
     links:

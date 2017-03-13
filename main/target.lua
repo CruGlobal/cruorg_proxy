@@ -20,7 +20,7 @@ if ok then
     ngx.log(ngx.ERR, level)
     ngx.log(ngx.ERR, target)
 
-    if target and (target ~= 0) then
+    if target and (target ~= ngx.null) then
        ngx.var.target = os.getenv(target)
        return
     else

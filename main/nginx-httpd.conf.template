@@ -6,7 +6,8 @@ lua_code_cache off;
 
 server {
     listen 80 default_server;
-    # resolver 127.0.0.11;
+
+    resolver $RESOLVER;
 
     root /home/app/webapp/public;
 
