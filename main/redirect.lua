@@ -30,7 +30,9 @@ if (not target) or (target == ngx.null) then
 
     for pattern, sub in pairs(arr_rewrite) do
       -- If the uri matches this rule, redirect to the target uri
-      if re.find(uri, pattern) then
+      local match_index = re.find(uri, pattern)
+      -- we only want to match the beginning of a URL
+      if match_index == 1 then
         new_uri = re.gsub(uri, pattern, sub)
         red:set_keepalive(0, 100)
 

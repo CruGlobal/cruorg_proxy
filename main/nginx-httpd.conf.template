@@ -1,5 +1,5 @@
 error_log syslog:server=unix:/var/nginx-error-logging.sock;
-lua_shared_dict paths 10m;
+# lua_shared_dict paths 10m;
 # lua_code_cache off;
 
 server {
