@@ -24,12 +24,6 @@ tests["'/level'{.*}"] = [location(`curl -s --head localhost/level2`), '/level1/l
 run_tests(tests)
 redis.hdel('redirects:regex', "'/level'{.*}")
 
-redis.hset('redirects:regex', "'/level'{.*}", '/level1/level%1.html')
-tests = {}
-tests["^'/level'{.*}$"] = [location(`curl -s --head localhost/level2`), '/level1/level2.html']
-run_tests(tests)
-redis.hdel('redirects:regex', "'/level'{.*}")
-
 
 puts "\n\n"
 
