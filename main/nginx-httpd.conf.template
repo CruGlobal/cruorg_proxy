@@ -5,6 +5,11 @@ error_log syslog:server=unix:/var/nginx-error-logging.sock;
 server {
     listen 80 default_server;
 
+    # Make sure traffic is SSL
+    if ($http_x_forwarded_proto != "https") {
+        rewrite ^(.*)$ https://$host$1 permanent;
+    }
+
     resolver $RESOLVER;
 
     root /home/app/webapp/public;
