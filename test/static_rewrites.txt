@@ -8,8 +8,10 @@
 /about-us/policies/terms-of-use.aspx about/terms-of-use.html
 /about-us/policies/terms-of-use/index.htm /about/terms-of-use.html
 /campus /communities/campus.html
+/campus /communities/campus.html
 /ccci.org /
 /cgi-bin/promises.cgi /train-and-grow/devotional-life/todays-promise.html
+/city /communities/city.html
 /city /communities/city.html
 /growth/growing-closer-to-god/7-steps-to-fasting-and-prayer/index.aspx /train-and-grow/devotional-life/7-steps-to-fasting.html
 /growth/growing-closer-to-god/how-to-fast/index.aspx /train-and-grow/devotional-life/personal-guide-to-fasting.html
@@ -27,6 +29,7 @@
 /keys /train-and-grow.html
 /materials.html /train-and-grow.html
 /military /communities/military.html
+/ministries-and-locations /communities.html
 /ministries-and-locations.aspx /communities.html
 /ministries/college/index.aspx /campus.html
 /ministries/locations.html /communities.html
@@ -145,3 +148,4 @@
 /training-and-growth/devotional-life/personal-guide-to-fasting/02-why-you-should-fast.htm /train-and-grow/devotional-life/personal-guide-to-fasting.2.html
 /training-and-growth/devotional-life/personal-guide-to-fasting/04-how-long-and-what-type.htm /train-and-grow/devotional-life/personal-guide-to-fasting.4.html
 /training-and-growth/devotional-life/personal-guide-to-fasting/11-finishing-your-fast.htm /train-and-grow/devotional-life/personal-guide-to-fasting.11.html
+/wc /communities/campus/winterconference
