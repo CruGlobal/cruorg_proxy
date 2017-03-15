@@ -14,11 +14,11 @@ if ok then
   ngx.log(ngx.ERR, level_count)
 
   for i=1,level_count do
-    ngx.log(ngx.ERR, i)
+  --  ngx.log(ngx.ERR, i)
     local level = table.concat(levels)
     target, err = red:get("upstreams:" .. level)
-    ngx.log(ngx.ERR, level)
-    ngx.log(ngx.ERR, target)
+  --  ngx.log(ngx.ERR, level)
+  --  ngx.log(ngx.ERR, target)
 
     if target and (target ~= ngx.null) then
        ngx.var.target = os.getenv(target)

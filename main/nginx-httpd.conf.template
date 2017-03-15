@@ -1,8 +1,6 @@
 error_log syslog:server=unix:/var/nginx-error-logging.sock;
 lua_shared_dict paths 10m;
-lua_code_cache off;
-
-
+# lua_code_cache off;
 
 server {
     listen 80 default_server;
@@ -12,6 +10,8 @@ server {
     root /home/app/webapp/public;
 
     access_log syslog:server=unix:/var/nginx-access-logging.sock;
+
+    include /usr/local/openresty/nginx/conf/pagespeed.conf;
 
     location /monitor.html {}
 
@@ -32,4 +32,5 @@ server {
     error_page 500 502 503 504 /500.html;
     client_max_body_size 4G;
     keepalive_timeout 10;
+
 }

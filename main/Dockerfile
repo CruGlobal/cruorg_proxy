@@ -3,13 +3,6 @@ MAINTAINER cru.org <wmd@cru.org>
 
 ARG RESOLVER
 
-# Install luarocks
-RUN apt-get update \
-	&& apt-get install -y -q \
-    unzip \
-    gettext-base \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 RUN mkdir -p /usr/src/luarocks \
   && curl -SL "http://luarocks.github.io/luarocks/releases/luarocks-2.4.2.tar.gz" -o luarocks.tar.gz  \
 	&& tar -xzf luarocks.tar.gz -C /usr/src/luarocks --strip-components=1 \
@@ -22,9 +15,12 @@ RUN mkdir -p /usr/src/luarocks \
   && make build && make install \
   && /usr/local/openresty/luajit/bin/luarocks install lpeg
 
+RUN mkdir -p /home/app/webapp/public/mod_pagespeed && chmod 777 /home/app/webapp/public/mod_pagespeed
+
 COPY monitor.html /home/app/webapp/public/monitor.html
 COPY env.conf /usr/local/openresty/nginx/env.conf
 COPY nginx-httpd.conf.template /usr/local/openresty/nginx/conf.d/webapp.conf.t
+COPY pagespeed.conf /usr/local/openresty/nginx/conf/pagespeed.conf
 
 # Resolver IP needs to be dynamic for docker-compose tests to work.
 RUN envsubst '$RESOLVER' < /usr/local/openresty/nginx/conf.d/webapp.conf.t > /usr/local/openresty/nginx/conf.d/webapp.conf \
