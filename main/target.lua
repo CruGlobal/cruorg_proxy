@@ -11,7 +11,7 @@ if ok then
 
   local levels = {re.match(string.lower(ngx.var.uri), "{'/'[a-z0-9_-]+}*")}
   local level_count = #levels
-  ngx.log(ngx.ERR, level_count)
+  -- ngx.log(ngx.ERR, level_count)
 
   for i=1,level_count do
   --  ngx.log(ngx.ERR, i)
@@ -24,7 +24,9 @@ if ok then
        ngx.var.target = os.getenv(target)
        return
     else
-       ngx.log(ngx.ERR, err)
+      if err ~= ngx.null then
+        ngx.log(ngx.ERR, err)
+      end
     end
     table.remove(levels)
   end
