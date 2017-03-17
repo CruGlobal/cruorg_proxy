@@ -22,18 +22,18 @@ location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
 #location ~ "^/ngx_pagespeed_message$" { }
 #location ~ "^/ngx_pagespeed_referer_statistics$" { }
 
-location /ngx_pagespeed_statistics { allow 127.0.0.1; deny all; }
-location /ngx_pagespeed_global_statistics { allow 127.0.0.1; deny all; }
-location /ngx_pagespeed_message { allow 127.0.0.1; deny all; }
-location /pagespeed_console {  }
-location ~ ^/pagespeed_admin {  }
-location ~ ^/pagespeed_global_admin { allow 127.0.0.1; deny all; }
+#location /ngx_pagespeed_statistics { allow 127.0.0.1; deny all; }
+#location /ngx_pagespeed_global_statistics { allow 127.0.0.1; deny all; }
+#location /ngx_pagespeed_message { allow 127.0.0.1; deny all; }
+#location /pagespeed_console {  }
+#location ~ ^/pagespeed_admin {  }
+#location ~ ^/pagespeed_global_admin { allow 127.0.0.1; deny all; }
 
-pagespeed StatisticsPath /ngx_pagespeed_statistics;
+#pagespeed StatisticsPath /ngx_pagespeed_statistics;
 #pagespeed GlobalStatisticsPath /ngx_pagespeed_global_statistics;
-pagespeed MessagesPath /ngx_pagespeed_message;
-pagespeed ConsolePath /pagespeed_console;
-pagespeed AdminPath /pagespeed_admin;
+#pagespeed MessagesPath /ngx_pagespeed_message;
+#pagespeed ConsolePath /pagespeed_console;
+#pagespeed AdminPath /pagespeed_admin;
 #pagespeed GlobalAdminPath /pagespeed_global_admin;
 
 # Default Set of Filters: https://modpagespeed.com/doc/config_filters
@@ -70,3 +70,5 @@ pagespeed MessageBufferSize 100000;
 pagespeed RespectXForwardedProto on;
 
 pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
+
+pagespeed Disallow "*/cruicons.woff?10301097"
