@@ -56,14 +56,17 @@ pagespeed EnableFilters collapse_whitespace,remove_comments;
 pagespeed EnableFilters move_css_to_head;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
-#pagespeed Domain *.cru.org;
-#pagespeed ShardDomain www.cru.org static1.cru.org,static2.cru.org;
-pagespeed MapOriginDomain https://$AEM_LB https://*.cru.org $DOMAIN;
+pagespeed Domain *.cru.org;
+
+
+pagespeed ShardDomain "https://$DOMAIN" "https://cdn1-$DOMAIN,https://cdn2-$DOMAIN";
+
+pagespeed MapOriginDomain https://$AEM_LB https://$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain https://$AEM_LB https://cdn1-$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain https://$AEM_LB https://cdn2-$DOMAIN $DOMAIN;
 
 pagespeed MessageBufferSize 100000;
 
 pagespeed RespectXForwardedProto on;
 
 pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
-
-#pagespeed UseNativeFetcher on;
