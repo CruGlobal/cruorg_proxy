@@ -61,9 +61,9 @@ pagespeed Domain *.cru.org;
 
 pagespeed ShardDomain "https://$DOMAIN" "https://cdn1-$DOMAIN,https://cdn2-$DOMAIN";
 
-pagespeed MapOriginDomain https://$AEM_LB https://$DOMAIN $DOMAIN;
-pagespeed MapOriginDomain https://$AEM_LB https://cdn1-$DOMAIN $DOMAIN;
-pagespeed MapOriginDomain https://$AEM_LB https://cdn2-$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain $AEM_ADDR https://$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain $AEM_ADDR https://cdn1-$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain $AEM_ADDR https://cdn2-$DOMAIN $DOMAIN;
 
 pagespeed MessageBufferSize 100000;
 
@@ -71,4 +71,7 @@ pagespeed RespectXForwardedProto on;
 
 pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
 
-pagespeed Disallow "*/cruicons.woff?10301097"
+pagespeed Disallow "*/cruicons.woff?10301097";
+
+#pagespeed MapProxyDomain https://$DOMAIN/s3
+#                         $S3_ADDR;

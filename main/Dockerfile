@@ -2,8 +2,9 @@ FROM 056154071827.dkr.ecr.us-east-1.amazonaws.com/base-image-openresty:latest
 MAINTAINER cru.org <wmd@cru.org>
 
 ARG RESOLVER
-ARG AEM_LB
+ARG AEM_ADDR
 ARG DOMAIN
+ARG S3_ADDR
 
 RUN mkdir -p /usr/src/luarocks \
   && curl -SL "http://luarocks.github.io/luarocks/releases/luarocks-2.4.2.tar.gz" -o luarocks.tar.gz  \
@@ -27,9 +28,9 @@ COPY pagespeed.conf.template /usr/local/openresty/nginx/conf/pagespeed.conf.t
 COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 
 # Resolver IP needs to be dynamic for docker-compose tests to work.
-RUN envsubst '$RESOLVER' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
+RUN envsubst '$RESOLVER $S3_ADDR' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
   && rm /usr/local/openresty/nginx/conf/location.conf.t
-RUN envsubst '$DOMAIN $AEM_LB' < /usr/local/openresty/nginx/conf/pagespeed.conf.t > /usr/local/openresty/nginx/conf/pagespeed.conf \
+RUN envsubst '$DOMAIN $AEM_ADDR' < /usr/local/openresty/nginx/conf/pagespeed.conf.t > /usr/local/openresty/nginx/conf/pagespeed.conf \
   && rm /usr/local/openresty/nginx/conf/pagespeed.conf.t
 
 COPY redirect.lua /home/app/redirect.lua
