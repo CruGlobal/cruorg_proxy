@@ -22,13 +22,13 @@ RUN mkdir -p /home/app/webapp/public/mod_pagespeed && chmod 777 /home/app/webapp
 
 COPY monitor.html /home/app/webapp/public/monitor.html
 COPY env.conf /usr/local/openresty/nginx/env.conf
-COPY nginx-httpd.conf.template /usr/local/openresty/nginx/conf.d/webapp.conf.t
+COPY nginx-httpd.conf /usr/local/openresty/nginx/conf.d/webapp.conf
 COPY pagespeed.conf.template /usr/local/openresty/nginx/conf/pagespeed.conf.t
+COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 
 # Resolver IP needs to be dynamic for docker-compose tests to work.
-RUN envsubst '$RESOLVER' < /usr/local/openresty/nginx/conf.d/webapp.conf.t > /usr/local/openresty/nginx/conf.d/webapp.conf \
-  && rm /usr/local/openresty/nginx/conf.d/webapp.conf.t
-
+RUN envsubst '$RESOLVER' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
+  && rm /usr/local/openresty/nginx/conf/location.conf.t
 RUN envsubst '$DOMAIN $AEM_LB' < /usr/local/openresty/nginx/conf/pagespeed.conf.t > /usr/local/openresty/nginx/conf/pagespeed.conf \
   && rm /usr/local/openresty/nginx/conf/pagespeed.conf.t
 
