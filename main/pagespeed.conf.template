@@ -73,5 +73,8 @@ pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authorit
 
 pagespeed Disallow "*/cruicons.woff?10301097";
 
+pagespeed EnableCachePurge on;
+pagespeed PurgeMethod PURGE;
+
 #pagespeed MapProxyDomain https://$DOMAIN/s3
 #                         $S3_ADDR;
