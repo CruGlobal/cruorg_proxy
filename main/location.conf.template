@@ -1,10 +1,11 @@
+lua_code_cache off;
+
 resolver $RESOLVER;
 
 root /home/app/webapp/public;
 
-access_log syslog:server=unix:/var/nginx-access-logging.sock;
-
 include /usr/local/openresty/nginx/conf/pagespeed.conf;
+include /usr/local/openresty/nginx/conf/pagespeed-site.conf;
 
 location /monitor.html {}
 
@@ -22,21 +23,13 @@ location / {
   rewrite_log on;
   rewrite ^/cru-nav\.js$ /cru-nav.json last;
 
-  # Make sure traffic is SSL
-  if ($http_x_forwarded_proto != "https") {
-      set $test "S";
-  }
-  if ($scheme != "https") {
-      set $test "${test}L";
-  }
-  if ($test = "SL") {
-      rewrite ^(.*)$ https://$host$1 permanent;
-  }
 
-  set $target '';
+
   default_type 'text/plain';
 
   rewrite_by_lua_file /home/app/redirect.lua;
+
+  set_by_lua $target 'return os.getenv("DEFAULT_PROXY_TARGET")';
   access_by_lua_file /home/app/target.lua;
 
   proxy_pass $target;
