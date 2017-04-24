@@ -5,9 +5,13 @@ services:
       context: ../main
       args:
         - RESOLVER=127.0.0.11
+        - DOMAIN=www.cru.org
+        - AEM_ADDR=http://web2
+        - S3_ADDR=http://s3
     image: 056154071827.dkr.ecr.us-east-1.amazonaws.com/cruorg_proxy
     ports:
       - "80:80"
+      - "443:443"
     links:
       - redis:redis
       - web1:web1
@@ -15,7 +19,11 @@ services:
     environment:
       - WP_ADDR=http://web1
       - AEM_ADDR=http://web2
+      - DEFAULT_PROXY_TARGET=http://web2
       - REDIS_PORT_6379_TCP_ADDR=redis
+      - VANITY_KEY=redirect
+      - REWRITES_KEY=redirects:regex
+      - UPSTREAMS_KEY=upstreams
   web1:
     build: ./web1
     links:
