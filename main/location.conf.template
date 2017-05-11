@@ -1,5 +1,3 @@
-lua_code_cache off;
-
 resolver $RESOLVER;
 
 root /home/app/webapp/public;
