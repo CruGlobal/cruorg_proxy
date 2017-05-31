@@ -18,27 +18,27 @@ end
 
 redis = Redis.new(:port => 6380, :db => 3)
 puts "REDIRECTOR TESTS"
-redis.hset('redirects:regex', "'/level'{.*}", '/level1/level%1.html')
+redis.hset('redirects:regex', "/level(.*)", '/level1/level%1.html')
 tests = {}
-tests["'/level'{.*}"] = [location(`curl -k -s --head https://localhost/level2?purge_vanity`), '/level1/level2.html']
+tests["/level(.*)"] = [location(`curl -k -s --head https://localhost/level2?purge_vanity`), '/level1/level2.html']
 run_tests(tests)
-redis.hdel('redirects:regex', "'/level'{.*}")
+redis.hdel('redirects:regex', "/level(.*)")
 
 # with caching the previous test should work even with the redis key deleted
 tests = {}
-tests["'/level'{.*} - target cache"] = [location(`curl -k -s --head https://localhost/level2`), '/level1/level2.html']
+tests["/level(.*) - target cache"] = [location(`curl -k -s --head https://localhost/level2`), '/level1/level2.html']
 run_tests(tests)
 
 # with purge_vanity parameter, it should return a 404
 tests = {}
-tests["'/level'{.*} - cache purge"] = [location(`curl -k -s --head https://localhost/level2?purge_vanity`), 'no-cache']
+tests["/level(.*) - cache purge"] = [location(`curl -k -s --head https://localhost/level2?purge_vanity`), 'no-cache']
 run_tests(tests)
 
-redis.hset('redirects:regex', "'/campus/'{.*}", '/communities/campus/%1')
+redis.hset('redirects:regex', "^/campus/(.*)", '/communities/campus/%1')
 tests = {}
-tests["'/campus/'{.*}"] = [location(`curl -k -s --head https://localhost/communities/campus/foo`), 'no-cache']
+tests["/campus/(.*)"] = [location(`curl -k -s --head https://localhost/communities/campus/foo?purge_vanity`), 'no-cache']
 run_tests(tests)
-redis.hdel('redirects:regex', "'/campus/'{.*}")
+redis.hdel('redirects:regex', "^/campus/(.*)")
 
 puts "\n\n"
 
