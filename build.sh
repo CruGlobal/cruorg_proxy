@@ -1,7 +1,7 @@
 #!/bin/bash
 
 docker build \
- --build-arg RESOLVER=10.10.10.38 \
+ --build-arg RESOLVER="10.16.2.22 10.16.3.22" \
  --build-arg AEM_ADDR=$AEM_ADDR \
  --build-arg DOMAIN=$DOMAIN \
  --build-arg S3_ADDR=$S3_ADDR \
