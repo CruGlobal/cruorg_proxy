@@ -1,6 +1,3 @@
-# Enable PageSpeed
-pagespeed off;
-
 # PageSpeed will rewrite resources found from these explicitly listed domains
 pagespeed Domain $DOMAIN;
 pagespeed Domain cdn1-$DOMAIN;
