@@ -17,6 +17,16 @@ location /s3 {
 
 }
 
+location /storylines {
+  rewrite ^/storylines/(.*)$ /$1 break;
+
+  proxy_pass $STORYLINES_ADDR;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header        X-Forwarded-Proto $scheme;
+
+}
+
 location / {
   rewrite_log on;
   rewrite ^/cru-nav\.js$ /cru-nav.json last;

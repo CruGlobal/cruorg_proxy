@@ -5,6 +5,7 @@ ARG RESOLVER
 ARG AEM_ADDR
 ARG DOMAIN
 ARG S3_ADDR
+ARG STORYLINES_ADDR
 
 COPY monitor.html /home/app/webapp/public/monitor.html
 COPY pagespeed-site.conf.template /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
@@ -12,8 +13,8 @@ COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 COPY env-site.conf /usr/local/openresty/nginx/env.d/env-site.conf
 
 # Resolver IP needs to be dynamic for docker-compose tests to work.
-RUN envsubst '$RESOLVER $S3_ADDR' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
+RUN envsubst '$RESOLVER $S3_ADDR $STORYLINES_ADDR' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
   && rm /usr/local/openresty/nginx/conf/location.conf.t
-RUN envsubst '$DOMAIN $AEM_ADDR' < /usr/local/openresty/nginx/conf/pagespeed-site.conf.t > /usr/local/openresty/nginx/conf/pagespeed-site.conf \
+RUN envsubst '$DOMAIN $PROXY_ADDR' < /usr/local/openresty/nginx/conf/pagespeed-site.conf.t > /usr/local/openresty/nginx/conf/pagespeed-site.conf \
   && rm /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
 
