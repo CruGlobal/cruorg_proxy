@@ -19,6 +19,8 @@ location /s3 {
 
 location /storylines {
   rewrite ^/storylines/(.*)$ /$1 break;
+  rewrite ^/storylines$ /index.html break;
+  gzip off;
 
   proxy_pass $STORYLINES_ADDR;
   proxy_set_header X-Real-IP $remote_addr;
