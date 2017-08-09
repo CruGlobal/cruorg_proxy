@@ -18,8 +18,9 @@ location /s3 {
 }
 
 location /storylines {
+  rewrite ^/storylines([^.]*[^/])$ $1/index.html break;
   rewrite ^/storylines/(.*)$ /$1 break;
-  rewrite ^/storylines$ /index.html break;
+
   gzip off;
 
   proxy_pass $STORYLINES_ADDR;
