@@ -18,7 +18,10 @@ location /s3 {
 }
 
 location /storylines {
-  rewrite ^/storylines([^.]*[^/])$ $1/index.html break;
+  # Add trailing slash
+  rewrite ^([^.]*[^/])$ $1/index.html;
+
+  # Rewrite to bucket root
   rewrite ^/storylines/(.*)$ /$1 break;
 
   gzip off;
