@@ -18,7 +18,14 @@ location /s3 {
 }
 
 location /storylines {
+  # Add trailing slash
+  rewrite ^([^.]*[^/])$ $1/;
+  rewrite ^/(.*)/$ /$1/index.html;
+
+  # Rewrite to bucket root
   rewrite ^/storylines/(.*)$ /$1 break;
+
+  gzip off;
 
   proxy_pass $STORYLINES_ADDR;
   proxy_set_header X-Real-IP $remote_addr;
