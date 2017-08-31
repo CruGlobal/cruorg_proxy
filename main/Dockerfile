@@ -11,6 +11,7 @@ COPY monitor.html /home/app/webapp/public/monitor.html
 COPY pagespeed-site.conf.template /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
 COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 COPY env-site.conf /usr/local/openresty/nginx/env.d/env-site.conf
+COPY nginx-httpd.conf /usr/local/openresty/nginx/conf.d/nginx-httpd.conf
 
 # Resolver IP needs to be dynamic for docker-compose tests to work.
 RUN envsubst '$RESOLVER $S3_ADDR $STORYLINES_ADDR' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
