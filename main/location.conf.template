@@ -12,27 +12,29 @@ location /s3 {
 
   proxy_pass $S3_ADDR;
   proxy_set_header X-Real-IP $remote_addr;
-  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header        X-Forwarded-Proto $scheme;
-
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $myscheme;
 }
 
 location /storylines {
+  # Add trailing slash
+  rewrite ^([^.]*[^/])$ $1/;
+  rewrite ^/(.*)/$ /$1/index.html;
+
+  # Rewrite to bucket root
   rewrite ^/storylines/(.*)$ /$1 break;
+
+  gzip off;
 
   proxy_pass $STORYLINES_ADDR;
   proxy_set_header X-Real-IP $remote_addr;
-  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header        X-Forwarded-Proto $scheme;
-
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $myscheme;
 }
 
 location / {
   rewrite_log on;
   rewrite ^/cru-nav\.js$ /cru-nav.json last;
-
-
-
   default_type 'text/plain';
 
   rewrite_by_lua_file /home/app/redirect.lua;
@@ -41,10 +43,10 @@ location / {
   access_by_lua_file /home/app/target.lua;
 
   proxy_pass $target;
-  proxy_set_header Host      $host;
+  proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
-  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header        X-Forwarded-Proto 'https';
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $myscheme;
 }
 
 error_page 500 502 503 504 /500.html;
