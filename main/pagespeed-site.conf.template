@@ -1,5 +1,5 @@
 # Enable PageSpeed
-pagespeed on;
+pagespeed off;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
 pagespeed Domain $DOMAIN;
