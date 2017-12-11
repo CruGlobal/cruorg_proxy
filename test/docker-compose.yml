@@ -6,8 +6,9 @@ services:
       args:
         - RESOLVER=127.0.0.11
         - DOMAIN=www.cru.org
-        - AEM_ADDR=http://web2
-        - S3_ADDR=http://s3
+        - AEM_ADDR=http://stage-cru-org-613775129.us-east-1.elb.amazonaws.com
+        - S3_ADDR=http://cru-giveprod.s3.amazonaws.com
+        - STORYLINES_ADDR=http://cru.org-storylines.s3-website-us-east-1.amazonaws.com
     image: 056154071827.dkr.ecr.us-east-1.amazonaws.com/cruorg_proxy
     ports:
       - "80:80"
