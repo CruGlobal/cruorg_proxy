@@ -1,6 +1,9 @@
 # Enable PageSpeed
 pagespeed on;
 
+pagespeed RedisServer "$REDIS_PORT_6379_TCP_ADDR_A";
+pagespeed RedisDatabaseIndex 3;
+
 # PageSpeed will rewrite resources found from these explicitly listed domains
 pagespeed Domain $DOMAIN;
 pagespeed Domain cdn1-$DOMAIN;
