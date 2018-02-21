@@ -1,7 +1,7 @@
 # Enable PageSpeed
 pagespeed on;
 
-InPlaceSMaxAgeSec -1;
+pagespeed InPlaceSMaxAgeSec -1;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
 pagespeed Domain $DOMAIN;
