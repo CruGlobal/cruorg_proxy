@@ -17,5 +17,4 @@ pagespeed MapOriginDomain $PROXY_ADDR https://cdn2-$DOMAIN $DOMAIN;
 pagespeed Disallow "*/cruicons.woff?10301097";
 
 pagespeed AdminPath /pagespeed_admin;
-location ~ ^/pagespeed_admin { allow 10.16.0.0/16; deny all; }
-
+location ~ ^/pagespeed_admin { allow 127.0.0.1; allow 10.16.18.120; allow 10.16.0.0/16; deny all}
