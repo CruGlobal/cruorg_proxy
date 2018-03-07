@@ -22,6 +22,6 @@ location ~ ^/pagespeed_admin {
                               allow 10.0.0.0/8;
                               allow 127.0.0.1;
                               deny all;
-                              auth_basic  “Administrator’s area;
+                              auth_basic  “Administrator’s area";
                               auth_basic_user_file /home/app/webapp/public/mod_pagespeed/.htpasswd;  
                              }
