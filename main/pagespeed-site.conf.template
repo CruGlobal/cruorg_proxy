@@ -15,6 +15,7 @@ pagespeed MapOriginDomain $PROXY_ADDR https://cdn1-$DOMAIN $DOMAIN;
 pagespeed MapOriginDomain $PROXY_ADDR https://cdn2-$DOMAIN $DOMAIN;
 
 pagespeed Disallow "*/cruicons.woff?10301097";
+pagespeed Disallow "*/wp-content/*.css";
 
 pagespeed AdminPath /pagespeed_admin;
 location ~ ^/pagespeed_admin {
