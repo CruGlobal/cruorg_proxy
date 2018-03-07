@@ -19,5 +19,5 @@ pagespeed Disallow "*/cruicons.woff?10301097";
 pagespeed AdminPath /pagespeed_admin;
 location ~ ^/pagespeed_admin {
                               auth_basic  "Administrator’s area";
-                              auth_basic_user_file /usr/local/openresty/nginx/conf/.htpasswd;  
+                              auth_basic_user_file /usr/local/openresty/nginx/conf/.htpasswd;
                              }
