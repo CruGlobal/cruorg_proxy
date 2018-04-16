@@ -6,7 +6,7 @@ include /usr/local/openresty/nginx/conf/pagespeed.conf;
 include /usr/local/openresty/nginx/conf/pagespeed-site.conf;
 
 location /monitor.html {
-    return 200 'ok';
+    return 200 'OK';
     add_header Content-Type text/plain;
 }
 
