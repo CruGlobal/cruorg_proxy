@@ -5,7 +5,10 @@ root /home/app/webapp/public;
 include /usr/local/openresty/nginx/conf/pagespeed.conf;
 include /usr/local/openresty/nginx/conf/pagespeed-site.conf;
 
-location /monitor.html {}
+location /monitor.html {
+    return 200 'ok';
+    add_header Content-Type text/plain;
+}
 
 location /s3 {
   rewrite ^/s3/(.*)$ /$1 break;

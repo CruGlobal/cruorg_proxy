@@ -8,7 +8,6 @@ ARG S3_ADDR
 ARG STORYLINES_ADDR
 ARG REDIS_PORT_6379_TCP_ADDR_A
 
-COPY monitor.html /home/app/webapp/public/monitor.html
 COPY pagespeed-site.conf.template /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
 COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 COPY location_familylife.conf /usr/local/openresty/nginx/conf/location_familylife.conf
