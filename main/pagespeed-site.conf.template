@@ -3,7 +3,7 @@ pagespeed on;
 
 pagespeed InPlaceSMaxAgeSec -1;
 
-pagespeed RedisServer "$REDIS_PORT_6379_TCP_ADDR_A";
+pagespeed RedisServer "$REDIS_PORT_6379_TCP_ADDR_PS";
 pagespeed RedisDatabaseIndex 3;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
