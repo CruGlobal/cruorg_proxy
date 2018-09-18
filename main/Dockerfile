@@ -19,5 +19,5 @@ COPY .htpasswd /usr/local/openresty/nginx/conf/.htpasswd
 # Resolver IP needs to be dynamic for docker-compose tests to work.
 RUN envsubst '$RESOLVER $S3_ADDR $STORYLINES_ADDR' < /usr/local/openresty/nginx/conf/location.conf.t > /usr/local/openresty/nginx/conf/location.conf \
   && rm /usr/local/openresty/nginx/conf/location.conf.t
-RUN envsubst '$DOMAIN $PROXY_ADDR $REDIS_PORT_6379_TCP_ADDR_A $REDIS_PORT_6379_TCP_ADDR_PS' < /usr/local/openresty/nginx/conf/pagespeed-site.conf.t > /usr/local/openresty/nginx/conf/pagespeed-site.conf \
+RUN envsubst '$DOMAIN $PROXY_ADDR $REDIS_PORT_6379_TCP_ADDR_PS' < /usr/local/openresty/nginx/conf/pagespeed-site.conf.t > /usr/local/openresty/nginx/conf/pagespeed-site.conf \
   && rm /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
