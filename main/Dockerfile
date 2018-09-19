@@ -9,6 +9,9 @@ ARG STORYLINES_ADDR
 ARG REDIS_PORT_6379_TCP_ADDR_A
 ARG REDIS_PORT_6379_TCP_ADDR_PS
 
+RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-url
+
+COPY target.lua /home/app/target.lua
 COPY pagespeed-site.conf.template /usr/local/openresty/nginx/conf/pagespeed-site.conf.t
 COPY location.conf.template /usr/local/openresty/nginx/conf/location.conf.t
 COPY location_familylife.conf /usr/local/openresty/nginx/conf/location_familylife.conf
