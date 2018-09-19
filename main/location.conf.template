@@ -43,13 +43,16 @@ location / {
   rewrite_by_lua_file /home/app/redirect.lua;
 
   set_by_lua $target 'return os.getenv("DEFAULT_PROXY_TARGET")';
+  set $proxy_host $host;
   access_by_lua_file /home/app/target.lua;
 
   proxy_pass $target;
-  proxy_set_header Host $host;
+  proxy_set_header Host $proxy_host;
   proxy_set_header X-Real-IP $remote_addr;
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   proxy_set_header X-Forwarded-Proto $myscheme;
+  proxy_ssl_server_name on;
+  proxy_ssl_protocols TLSv1.1 TLSv1.2;
 }
 
 error_page 500 502 503 504 /500.html;
