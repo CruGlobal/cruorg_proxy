@@ -30,10 +30,10 @@ local red = redis:new()
 
 red:set_timeout(1000) -- 1 second
 
-local ok, err = red:connect(os.getenv('REDIS_PORT_6379_TCP_ADDR'), 6379)
+local ok, err = red:connect(os.getenv('MAINTENANCE_REDIS_HOST'), os.getenv('MAINTENANCE_REDIS_PORT'))
 if ok then
     -- use db number 3
-    red:select(3)
+    red:select(os.getenv('MAINTENANCE_REDIS_DB_INDEX'))
 
     local arr_upstreams, err = red:hgetall(upstreams_key)
     if arr_upstreams and not err then
