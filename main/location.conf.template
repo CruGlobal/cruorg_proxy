@@ -47,6 +47,13 @@ location / {
   access_by_lua_file /home/app/target.lua;
 
   proxy_pass $target;
+
+  # Doubles buffer size to accommodate more headers and cookies
+  # See https://www.getpagespeed.com/server-setup/nginx/tuning-proxy_buffer_size-in-nginx
+  proxy_buffer_size 16k;
+  proxy_busy_buffers_size 24k;
+  proxy_buffers 64 4k;
+
   proxy_set_header Host $proxy_host;
   proxy_set_header X-Real-IP $remote_addr;
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
