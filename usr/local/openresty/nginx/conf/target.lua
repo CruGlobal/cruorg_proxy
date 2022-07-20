@@ -12,6 +12,12 @@ if not args['purge_target'] then
     target, err = ngx_targets:get(uri)
     if target then
         ngx.var.target = os.getenv(target)
+        -- specific upstreams require a different Host header
+        if target == "DEFAULT_PROXY_TARGET" then
+            -- AEM requires the Host header to be the origin domain
+            -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
+            ngx.var.proxy_host = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
+        end
         return
     end
 end
@@ -56,3 +62,10 @@ end
 success, err, forcible = ngx_targets:set(uri, target, 3600)
 
 ngx.var.target = os.getenv(target)
+
+-- specific upstreams require a different Host header
+if target == "DEFAULT_PROXY_TARGET" then
+    -- AEM requires the Host header to be the origin domain
+    -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
+    ngx.var.proxy_host = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
+end
