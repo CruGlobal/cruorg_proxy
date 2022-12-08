@@ -28,7 +28,7 @@ local red = redis:new()
 
 -- Connect to redis
 red:set_timeout(1000) -- 1 second=
-local ok, err = red:connect(os.getenv("MAINTENANCE_REDIS_HOST"), os.getenv("MAINTENANCE_REDIS_PORT"))
+local ok, err = red:connect(os.getenv("STORAGE_REDIS_HOST"), os.getenv("STORAGE_REDIS_PORT"))
 if not ok then
     ngx.log(ngx.ERR, "failed to connect to redis: ", err)
 
@@ -41,7 +41,7 @@ if not ok then
 end
 
 -- use db index
-red:select(os.getenv("MAINTENANCE_REDIS_DB_INDEX"))
+red:select(os.getenv("STORAGE_REDIS_DB_INDEX"))
 
 -- Look for exact (vanity) match in redis
 local target, err = red:get(vanities_key .. ":" .. uri)
