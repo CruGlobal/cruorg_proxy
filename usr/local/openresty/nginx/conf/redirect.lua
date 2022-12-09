@@ -81,8 +81,8 @@ red:set_keepalive(0, 100)
 -- If we have a match, store and redirect
 if target and target ~= ngx.null then
   -- Cache target for 1 hour
-  success, err, forcible = ngx_redirects:set(uri, target, 3600)
+  local success, err, forcible = ngx_redirects:set(uri, target, 3600)
   return ngx.redirect(target, 301)
 else
-  success, err, forcible = ngx_redirects:set(uri, 'none', 3600)
+  local success, err, forcible = ngx_redirects:set(uri, 'none', 3600)
 end

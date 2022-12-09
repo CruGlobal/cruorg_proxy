@@ -4,6 +4,7 @@ local args = ngx.req.get_uri_args()
 -- concat scheme, host and uri to produce url
 local uri = string.lower(ngx.var.scheme .. "://" .. ngx.var.host .. ngx.var.uri)
 local target = nil
+local err = nil
 
 -- Before messing around with redis, see if we have a cached target
 -- Passing a url arg of purge_target will force it to go to redis
