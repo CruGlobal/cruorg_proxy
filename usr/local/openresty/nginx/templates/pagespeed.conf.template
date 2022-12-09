@@ -1,10 +1,6 @@
 # Enable PageSpeed
 pagespeed on;
 
-set_by_lua ${env_domain} 'return os.getenv("DOMAIN")';
-set_by_lua $env_pagespeed_redis 'return os.getenv("REDIS_PORT_6379_TCP_ADDR_PS")';
-set_by_lua $env_proxy_addr 'return os.getenv("PROXY_ADDR")';
-
 # Needs to exist and be writable by nginx.  Use tmpfs for best performance.
 pagespeed FileCachePath "/var/run/openresty/mod_pagespeed/";
 pagespeed FileCacheSizeKb            102400;
@@ -74,19 +70,19 @@ pagespeed PurgeMethod PURGE;
 
 pagespeed InPlaceSMaxAgeSec -1;
 
-pagespeed RedisServer $env_pagespeed_redis;
+pagespeed RedisServer $REDIS_PORT_6379_TCP_ADDR_PS;
 pagespeed RedisDatabaseIndex 3;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
-pagespeed Domain ${env_domain};
-pagespeed Domain cdn1-${env_domain};
-pagespeed Domain cdn2-${env_domain};
+pagespeed Domain $DOMAIN;
+pagespeed Domain cdn1-$DOMAIN;
+pagespeed Domain cdn2-$DOMAIN;
 
-pagespeed ShardDomain "https://${env_domain}" "https://cdn1-${env_domain},https://cdn2-${env_domain}";
+pagespeed ShardDomain "https://$DOMAIN" "https://cdn1-$DOMAIN,https://cdn2-$DOMAIN";
 
-pagespeed MapOriginDomain $env_proxy_addr https://${env_domain} ${env_domain};
-pagespeed MapOriginDomain $env_proxy_addr https://cdn1-${env_domain} ${env_domain};
-pagespeed MapOriginDomain $env_proxy_addr https://cdn2-${env_domain} ${env_domain};
+pagespeed MapOriginDomain $PROXY_ADDR https://$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain $PROXY_ADDR https://cdn1-$DOMAIN $DOMAIN;
+pagespeed MapOriginDomain $PROXY_ADDR https://cdn2-$DOMAIN $DOMAIN;
 
 pagespeed Disallow "*/cruicons.woff?10301097";
 pagespeed Disallow "*/wp-content/*.css";

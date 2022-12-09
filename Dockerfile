@@ -46,6 +46,16 @@ RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
     && rm -rf /var/lib/apt/lists/*
 
 RUN opm get 3scale/lua-resty-url \
-    && mkdir -p /var/run/openresty/mod_pagespeed
+    && mkdir -p /var/run/openresty/mod_pagespeed \
+    && mkdir /docker-entrypoint.d
 
-COPY . /
+COPY usr/ /usr/
+COPY docker-entrypoint.sh /
+COPY 10-envsubst-on-templates.sh /docker-entrypoint.d
+
+ENV NGINX_ENVSUBST_TEMPLATE_DIR=/usr/local/openresty/nginx/templates
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/usr/local/openresty/nginx/conf
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+EXPOSE 80
