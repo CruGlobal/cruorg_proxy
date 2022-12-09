@@ -52,10 +52,11 @@ RUN opm get 3scale/lua-resty-url \
 COPY usr/ /usr/
 COPY docker-entrypoint.sh /
 COPY 10-envsubst-on-templates.sh /docker-entrypoint.d
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 ENV NGINX_ENVSUBST_TEMPLATE_DIR=/usr/local/openresty/nginx/templates
 ENV NGINX_ENVSUBST_OUTPUT_DIR=/usr/local/openresty/nginx/conf
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
-
 EXPOSE 80
+
+CMD ["openresty", "-g", "daemon off;"]
