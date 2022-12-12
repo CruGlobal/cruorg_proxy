@@ -59,7 +59,7 @@ pagespeed EnableFilters collapse_whitespace,remove_comments;
 # Moves CSS elements into the HEAD
 pagespeed EnableFilters move_css_to_head;
 
-# pagespeed MessageBufferSize 100000;
+pagespeed MessageBufferSize 100000;
 
 pagespeed RespectXForwardedProto on;
 
