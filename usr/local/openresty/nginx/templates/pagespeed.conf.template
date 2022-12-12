@@ -16,26 +16,6 @@ pagespeed LogDir /var/log/pagespeed;
 location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
   add_header "" "";
 }
-#location ~ "^/pagespeed_static/" { }
-#location ~ "^/ngx_pagespeed_beacon$" { }
-#location ~ "^/ngx_pagespeed_statistics$" { }
-#location ~ "^/ngx_pagespeed_console$" { }
-#location ~ "^/ngx_pagespeed_message$" { }
-#location ~ "^/ngx_pagespeed_referer_statistics$" { }
-
-#location /ngx_pagespeed_statistics { allow 127.0.0.1; deny all; }
-#location /ngx_pagespeed_global_statistics { allow 127.0.0.1; deny all; }
-#location /ngx_pagespeed_message { allow 127.0.0.1; deny all; }
-#location /pagespeed_console {  }
-#location ~ ^/pagespeed_admin {  }
-#location ~ ^/pagespeed_global_admin { allow 127.0.0.1; deny all; }
-
-#pagespeed StatisticsPath /ngx_pagespeed_statistics;
-#pagespeed GlobalStatisticsPath /ngx_pagespeed_global_statistics;
-#pagespeed MessagesPath /ngx_pagespeed_message;
-#pagespeed ConsolePath /pagespeed_console;
-#pagespeed AdminPath /pagespeed_admin;
-#pagespeed GlobalAdminPath /pagespeed_global_admin;
 
 # Default Set of Filters: https://modpagespeed.com/doc/config_filters
 pagespeed RewriteLevel CoreFilters;
@@ -59,12 +39,6 @@ pagespeed EnableFilters collapse_whitespace,remove_comments;
 # Moves CSS elements into the HEAD
 pagespeed EnableFilters move_css_to_head;
 
-pagespeed MessageBufferSize 100000;
-
-pagespeed RespectXForwardedProto on;
-
-pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
-
 pagespeed EnableCachePurge on;
 pagespeed PurgeMethod PURGE;
 
@@ -78,17 +52,16 @@ pagespeed Domain $DOMAIN;
 pagespeed Domain cdn1-$DOMAIN;
 pagespeed Domain cdn2-$DOMAIN;
 
-pagespeed ShardDomain "https://$DOMAIN" "https://cdn1-$DOMAIN,https://cdn2-$DOMAIN";
+pagespeed ShardDomain https://$DOMAIN https://cdn1-$DOMAIN,https://cdn2-$DOMAIN;
 
-pagespeed MapOriginDomain $PROXY_ADDR https://$DOMAIN $DOMAIN;
-pagespeed MapOriginDomain $PROXY_ADDR https://cdn1-$DOMAIN $DOMAIN;
-pagespeed MapOriginDomain $PROXY_ADDR https://cdn2-$DOMAIN $DOMAIN;
+pagespeed RespectXForwardedProto on;
+pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
 
 pagespeed Disallow "*/cruicons.woff?10301097";
 pagespeed Disallow "*/wp-content/*.css";
 
 pagespeed AdminPath /pagespeed_admin;
 location ~ ^/pagespeed_admin {
-                              auth_basic  "Administrator’s area";
-                              auth_basic_user_file /usr/local/openresty/nginx/conf/.htpasswd;
-                             }
+    auth_basic  "Administrator’s area";
+    auth_basic_user_file /usr/local/openresty/nginx/conf/.htpasswd;
+}
