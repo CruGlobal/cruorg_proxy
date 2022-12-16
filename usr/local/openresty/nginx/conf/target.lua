@@ -2,7 +2,7 @@ local resty_url = require 'resty.url'
 local ngx_targets = ngx.shared.targets
 local args = ngx.req.get_uri_args()
 -- concat scheme, host and uri to produce url
-local uri = string.lower(ngx.var.scheme .. "://" .. ngx.var.host .. ngx.var.uri)
+local uri = string.lower(ngx.var.thescheme .. "://" .. ngx.var.host .. ngx.var.uri)
 local target = nil
 local err = nil
 
@@ -34,7 +34,7 @@ if ok then
 
     local arr_upstreams, err = red:hgetall('upstreams')
     if arr_upstreams and not err then
-        upstreams = red:array_to_hash(arr_upstreams)
+        local upstreams = red:array_to_hash(arr_upstreams)
 
         for pattern, name in pairs(upstreams) do
             -- If the uri matches this pattern, set the the named target
@@ -59,7 +59,7 @@ if (not target) or (target == ngx.null) then
 end
 
 -- Store target for 1 hour
-success, err, forcible = ngx_targets:set(uri, target, 3600)
+local success, err, forcible = ngx_targets:set(uri, target, 3600)
 
 ngx.var.target = os.getenv(target)
 

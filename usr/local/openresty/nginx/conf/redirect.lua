@@ -63,13 +63,13 @@ if (not target) or (target == ngx.null) then
     return
   end
 
-  arr_rewrite = red:array_to_hash(redirects)
+  local arr_rewrite = red:array_to_hash(redirects)
   -- concat scheme, host and uri to produce url
   local redirect_uri = string.lower(ngx.var.scheme .. "://" .. ngx.var.host .. ngx.var.uri)
 
   for pattern, sub in pairs(arr_rewrite) do
     -- If the uri matches this rule, redirect to the target uri
-    new_uri, index, err = ngx.re.gsub(redirect_uri, pattern, sub, "i")
+    local new_uri, index, err = ngx.re.gsub(redirect_uri, pattern, sub, "i")
     if index > 0 then
       target = new_uri
       break
