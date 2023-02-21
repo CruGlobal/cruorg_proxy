@@ -45,8 +45,8 @@ pagespeed PurgeMethod PURGE;
 
 pagespeed InPlaceSMaxAgeSec -1;
 
-pagespeed RedisServer $REDIS_PORT_6379_TCP_ADDR_PS;
-pagespeed RedisDatabaseIndex 3;
+pagespeed RedisServer $PAGESPEED_REDIS_HOST;
+pagespeed RedisDatabaseIndex $PAGESPEED_REDIS_DB_INDEX;
 
 # PageSpeed will rewrite resources found from these explicitly listed domains
 pagespeed Domain $DOMAIN;
