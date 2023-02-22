@@ -1,0 +1,68 @@
+# Enable PageSpeed
+pagespeed on;
+
+# Needs to exist and be writable by nginx.  Use tmpfs for best performance.
+pagespeed FileCachePath "/var/run/openresty/mod_pagespeed/";
+pagespeed FileCacheSizeKb            102400;
+pagespeed FileCacheCleanIntervalMs   3600000;
+pagespeed FileCacheInodeLimit        500000;
+pagespeed MessageBufferSize 100000;
+
+pagespeed Statistics on;
+pagespeed StatisticsLogging on;
+pagespeed LogDir /var/log/pagespeed;
+
+# Ensure requests for pagespeed optimized resources go to the pagespeed handler
+# and no extraneous headers get set.
+location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" {
+  add_header "" "";
+}
+
+# Default Set of Filters: https://modpagespeed.com/doc/config_filters
+pagespeed RewriteLevel CoreFilters;
+
+pagespeed DisableFilters rewrite_images;
+pagespeed EnableFilters inline_images;
+
+# Combine background images in CSS files into one sprite.
+#pagespeed EnableFilters sprite_images;
+
+# Replace CSS tags with inline versions that include only the CSS used by the page.
+pagespeed EnableFilters prioritize_critical_css;
+
+# Defers the execution of JavaScript in HTML until page load complete.
+#pagespeed EnableFilters defer_javascript;
+
+# Removes excess whitespace in HTML files
+# Removes comments in HTML files
+pagespeed EnableFilters collapse_whitespace,remove_comments;
+
+# Moves CSS elements into the HEAD
+pagespeed EnableFilters move_css_to_head;
+
+pagespeed EnableCachePurge on;
+pagespeed PurgeMethod PURGE;
+
+pagespeed InPlaceSMaxAgeSec -1;
+
+pagespeed RedisServer $PAGESPEED_REDIS_HOST;
+pagespeed RedisDatabaseIndex $PAGESPEED_REDIS_DB_INDEX;
+
+# PageSpeed will rewrite resources found from these explicitly listed domains
+pagespeed Domain $DOMAIN;
+pagespeed Domain cdn1-$DOMAIN;
+pagespeed Domain cdn2-$DOMAIN;
+
+pagespeed ShardDomain https://$DOMAIN https://cdn1-$DOMAIN,https://cdn2-$DOMAIN;
+
+pagespeed RespectXForwardedProto on;
+pagespeed FetchHttps enable,allow_self_signed,allow_unknown_certificate_authority,allow_certificate_not_yet_valid;
+
+pagespeed Disallow "*/cruicons.woff?10301097";
+pagespeed Disallow "*/wp-content/*.css";
+
+pagespeed AdminPath /pagespeed_admin;
+location ~ ^/pagespeed_admin {
+    auth_basic  "Administrator’s area";
+    auth_basic_user_file /usr/local/openresty/nginx/conf/.htpasswd;
+}
