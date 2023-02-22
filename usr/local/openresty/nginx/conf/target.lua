@@ -32,7 +32,7 @@ if ok then
 
         for pattern, name in pairs(upstreams) do
             -- If the uri matches this pattern, set the the named target
-            match = ngx.re.match(uri, pattern, 'i')
+            local match = ngx.re.match(uri, pattern, 'i')
             if match then
                 target = name
                 break
