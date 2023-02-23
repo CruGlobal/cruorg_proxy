@@ -2,7 +2,7 @@ local resty_url = require 'resty.url'
 local ngx_targets = ngx.shared.targets
 local args = ngx.req.get_uri_args()
 -- concat scheme, host and uri to produce url
-local uri = string.lower(ngx.var.scheme .. "://" .. ngx.var.host .. ngx.var.uri)
+local uri = string.lower(ngx.var.thescheme .. "://" .. ngx.var.host .. ngx.var.uri)
 local target = nil
 local err = nil
 
@@ -12,6 +12,15 @@ if not args['purge_target'] then
     target, err = ngx_targets:get(uri)
     if target then
         ngx.var.target = os.getenv(target)
+        -- specific upstreams require a different Host header
+        if target == "DEFAULT_PROXY_TARGET" then
+            -- AEM requires the Host header to be the origin domain
+            -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
+            local value = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
+            if string.find(value, "adobeaemcloud.com") then
+              ngx.var.proxy_host = value
+            end
+        end
         return
     end
 end
@@ -28,7 +37,7 @@ if ok then
 
     local arr_upstreams, err = red:hgetall('upstreams')
     if arr_upstreams and not err then
-        upstreams = red:array_to_hash(arr_upstreams)
+        local upstreams = red:array_to_hash(arr_upstreams)
 
         for pattern, name in pairs(upstreams) do
             -- If the uri matches this pattern, set the the named target
@@ -53,6 +62,16 @@ if (not target) or (target == ngx.null) then
 end
 
 -- Store target for 1 hour
-success, err, forcible = ngx_targets:set(uri, target, 3600)
+local success, err, forcible = ngx_targets:set(uri, target, 3600)
 
 ngx.var.target = os.getenv(target)
+
+-- specific upstreams require a different Host header
+if target == "DEFAULT_PROXY_TARGET" then
+    -- AEM requires the Host header to be the origin domain
+    -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
+    local value = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
+    if string.find(value, "adobeaemcloud.com") then
+      ngx.var.proxy_host = value
+    end
+end
