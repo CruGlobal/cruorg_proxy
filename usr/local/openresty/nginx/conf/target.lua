@@ -17,7 +17,7 @@ if not args['purge_target'] then
             -- AEM requires the Host header to be the origin domain
             -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
             local value = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
-            if value.find('adobeaemcloud.com') then
+            if string.find(value, "adobeaemcloud.com") then
               ngx.var.proxy_host = value
             end
         end
@@ -71,7 +71,7 @@ if target == "DEFAULT_PROXY_TARGET" then
     -- AEM requires the Host header to be the origin domain
     -- https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/implementing/content-delivery/cdn.html?lang=en
     local value = resty_url.parse(os.getenv('DEFAULT_PROXY_TARGET')).host
-    if value.find('adobeaemcloud.com') then
+    if string.find(value, "adobeaemcloud.com") then
       ngx.var.proxy_host = value
     end
 end
