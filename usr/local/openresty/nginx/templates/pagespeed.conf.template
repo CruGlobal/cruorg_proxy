@@ -1,5 +1,5 @@
 # Enable PageSpeed
-pagespeed on;
+pagespeed off;
 
 # Needs to exist and be writable by nginx.  Use tmpfs for best performance.
 pagespeed FileCachePath "/var/run/openresty/mod_pagespeed/";
