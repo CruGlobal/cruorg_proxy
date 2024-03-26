@@ -1,4 +1,4 @@
-FROM openresty/openresty:1.21.4.1-alpine-apk
+FROM openresty/openresty:1.25.3.1-2-alpine-apk
 
 LABEL com.datadoghq.ad.check_names='["nginx"]'
 LABEL com.datadoghq.ad.init_configs='[{}]'
