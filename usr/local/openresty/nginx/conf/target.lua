@@ -26,6 +26,7 @@ end
 
 local redis = require "resty.redis"
 local red = redis:new()
+local upstreams_key = os.getenv('UPSTREAMS_KEY')
 
 red:set_timeout(1000) -- 1 second
 
@@ -34,7 +35,7 @@ if ok then
     -- use db number 3
     red:select(os.getenv('STORAGE_REDIS_DB_INDEX'))
 
-    local arr_upstreams, err = red:hgetall('upstreams')
+    local arr_upstreams, err = red:hgetall(upstreams_key)
     if arr_upstreams and not err then
         local upstreams = red:array_to_hash(arr_upstreams)
 
