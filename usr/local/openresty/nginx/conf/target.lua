@@ -1,8 +1,7 @@
 local resty_url = require 'resty.url'
 local ngx_targets = ngx.shared.targets
 local args = ngx.req.get_uri_args()
--- concat scheme, host and uri to produce url
-local uri = string.lower(ngx.var.thescheme .. "://" .. ngx.var.host .. ngx.var.uri)
+local uri = string.lower(ngx.var.uri)
 local target = nil
 local err = nil
 
