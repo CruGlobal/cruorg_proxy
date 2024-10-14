@@ -44,7 +44,7 @@ end
 red:select(os.getenv("STORAGE_REDIS_DB_INDEX"))
 
 -- Look for exact (vanity) match in redis
-local target, err = red:get(vanities_key .. ":" .. uri)
+local target, err = red:hget(vanities_key, uri)
 
 -- If we didn't find an exact vanity match, look for a pattern match
 if (not target) or (target == ngx.null) then
@@ -64,12 +64,9 @@ if (not target) or (target == ngx.null) then
   end
 
   local arr_rewrite = red:array_to_hash(redirects)
-  -- concat scheme, host and uri to produce url
-  local redirect_uri = string.lower(ngx.var.scheme .. "://" .. ngx.var.host .. ngx.var.uri)
-
   for pattern, sub in pairs(arr_rewrite) do
     -- If the uri matches this rule, redirect to the target uri
-    local new_uri, index, err = ngx.re.gsub(redirect_uri, pattern, sub, "i")
+    local new_uri, index, err = ngx.re.gsub(ngx.var.uri, pattern, sub, "i")
     if index > 0 then
       target = new_uri
       break

@@ -1,8 +1,7 @@
 local resty_url = require 'resty.url'
 local ngx_targets = ngx.shared.targets
 local args = ngx.req.get_uri_args()
--- concat scheme, host and uri to produce url
-local uri = string.lower(ngx.var.thescheme .. "://" .. ngx.var.host .. ngx.var.uri)
+local uri = string.lower(ngx.var.uri)
 local target = nil
 local err = nil
 
@@ -27,6 +26,7 @@ end
 
 local redis = require "resty.redis"
 local red = redis:new()
+local upstreams_key = os.getenv('UPSTREAMS_KEY')
 
 red:set_timeout(1000) -- 1 second
 
@@ -35,7 +35,7 @@ if ok then
     -- use db number 3
     red:select(os.getenv('STORAGE_REDIS_DB_INDEX'))
 
-    local arr_upstreams, err = red:hgetall('upstreams')
+    local arr_upstreams, err = red:hgetall(upstreams_key)
     if arr_upstreams and not err then
         local upstreams = red:array_to_hash(arr_upstreams)
 
