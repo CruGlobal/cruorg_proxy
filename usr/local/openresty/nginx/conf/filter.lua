@@ -42,22 +42,24 @@ end
 -- DETERMINE ROUTING TARGET
 -- ============================================
 
--- Query Redis to determine if this URI matches a WordPress upstream
--- This uses the same Redis hash (cruorg:upstreams) that target.lua uses
--- If the URI matches any pattern in Redis, it's a WordPress path
--- Otherwise, it's an AEM path (DEFAULT_PROXY_TARGET)
+-- Determine if this URI routes to WordPress or AEM
+-- Uses the same logic as target.lua:
+-- 1. Check nginx shared memory (ngx.shared.targets) for recent routing decisions
+-- 2. If not in shared memory, query Redis table (cruorg:upstreams) which contains
+--    WordPress path patterns defined in Terraform (redirects.tf)
+-- 3. Redis is the source of truth; shared memory is a performance optimization
 
 local is_wordpress_path = false
 
--- First check the shared cache (same as target.lua does)
+-- Step 1: Check nginx shared memory for recent routing decision
 local ngx_targets = ngx.shared.targets
 local cached_target, err = ngx_targets:get(uri)
 
 if cached_target and cached_target ~= "DEFAULT_PROXY_TARGET" then
-    -- Cache hit: This URI is known to route to a WordPress upstream
+    -- Found in shared memory: This URI was recently routed to a WordPress upstream
     is_wordpress_path = true
 else
-    -- Cache miss or DEFAULT_PROXY_TARGET: Check Redis
+    -- Step 2: Not in shared memory, query Redis table (source of truth)
     local redis = require "resty.redis"
     local red = redis:new()
     local upstreams_key = os.getenv('UPSTREAMS_KEY')
@@ -66,15 +68,15 @@ else
 
     local ok, err = red:connect(os.getenv('STORAGE_REDIS_HOST'), os.getenv('STORAGE_REDIS_PORT'))
     if ok then
-        -- use db number 3
         red:select(os.getenv('STORAGE_REDIS_DB_INDEX'))
 
+        -- Query the WordPress path patterns table
         local arr_upstreams, err = red:hgetall(upstreams_key)
         if arr_upstreams and not err then
             local upstreams = red:array_to_hash(arr_upstreams)
 
+            -- Check if URI matches any WordPress path pattern
             for pattern, name in pairs(upstreams) do
-                -- If the uri matches this pattern, it's a WordPress path
                 local match = ngx.re.match(uri, pattern, 'i')
                 if match then
                     is_wordpress_path = true
@@ -86,12 +88,12 @@ else
         red:set_keepalive(0, 100)
     else
         ngx.log(ngx.WARN, "Filter: failed to connect to redis: ", err)
-        -- If redis is down, check stale cache
+        -- Fallback: If Redis is unavailable, check stale shared memory entries
         local stale_target, err = ngx_targets:get_stale(uri)
         if stale_target and stale_target ~= "DEFAULT_PROXY_TARGET" then
             is_wordpress_path = true
         end
-        -- If we can't determine, assume AEM (safer to filter)
+        -- If we can't determine destination, assume AEM (safer to apply filters)
     end
 end
 
