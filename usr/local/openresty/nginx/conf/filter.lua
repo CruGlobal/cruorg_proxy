@@ -16,8 +16,15 @@ local method = ngx.var.request_method
 -- ============================================
 local BLOCK_RESPONSE = 403
 local LOG_BLOCKED = true
-local MONITORING_MODE = true  -- Set to false to enable blocking for all rules
-local MONITORING_MODE_WORDPRESS = true  -- Set to false to enable blocking for WordPress-specific rules (Rules 12-13)
+
+-- Monitoring mode flags - configurable via environment variables
+-- Set to "false" (string) to enable blocking, any other value keeps monitoring mode active
+local MONITORING_MODE = (os.getenv('SECURITY_FILTER_MONITORING_MODE') or "true") ~= "false"
+local MONITORING_MODE_WORDPRESS = (os.getenv('SECURITY_FILTER_MONITORING_MODE_WORDPRESS') or "true") ~= "false"
+
+-- Log current configuration on startup
+ngx.log(ngx.NOTICE, "Security Filter Config: MONITORING_MODE=", tostring(MONITORING_MODE),
+        ", MONITORING_MODE_WORDPRESS=", tostring(MONITORING_MODE_WORDPRESS))
 
 -- ============================================
 -- HELPER FUNCTIONS

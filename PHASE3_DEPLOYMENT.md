@@ -7,6 +7,7 @@ This PR adds a **Lua security filter** to the OpenResty proxy for context-aware 
 **Status**: MONITORING MODE (logs only, no blocking)
 **Safe to Deploy**: ✅ Yes - zero impact on traffic
 **Target Environments**: Stage first, then Production
+**Configuration**: Controlled via environment variables (runtime configuration)
 
 ## What This Does
 
@@ -31,6 +32,33 @@ SECURITY_FILTER_IMPLEMENTATION.md # NEW - Full documentation
 PHASE3_DEPLOYMENT.md              # NEW - This deployment guide
 ```
 
+## Environment Variables
+
+**Required Configuration**:
+```bash
+# Security Filter Monitoring Modes
+SECURITY_FILTER_MONITORING_MODE="true"              # Default: monitoring only (no blocking)
+SECURITY_FILTER_MONITORING_MODE_WORDPRESS="true"    # Default: monitoring only (no blocking)
+```
+
+**To Enable Blocking** (after validation period):
+```bash
+# Phase 1: Enable blocking for AEM-specific rules only
+SECURITY_FILTER_MONITORING_MODE="false"             # Enable blocking
+SECURITY_FILTER_MONITORING_MODE_WORDPRESS="true"    # Keep WordPress in monitoring
+
+# Phase 2: Enable blocking for WordPress-specific rules
+SECURITY_FILTER_MONITORING_MODE="false"             # Blocking enabled
+SECURITY_FILTER_MONITORING_MODE_WORDPRESS="false"   # Enable WordPress blocking
+```
+
+**Rollback** (if issues occur):
+```bash
+# Return to monitoring mode
+SECURITY_FILTER_MONITORING_MODE="true"
+SECURITY_FILTER_MONITORING_MODE_WORDPRESS="true"
+```
+
 ## Deployment Steps
 
 ### Stage Environment
@@ -40,17 +68,23 @@ PHASE3_DEPLOYMENT.md              # NEW - This deployment guide
 git checkout staging
 git merge feature/add-lua-security-filter
 
-# 2. Rebuild container
+# 2. Set environment variables (in your container orchestration config)
+# ECS Task Definition, Kubernetes ConfigMap, docker-compose.yml, etc.
+SECURITY_FILTER_MONITORING_MODE="true"
+SECURITY_FILTER_MONITORING_MODE_WORDPRESS="true"
+
+# 3. Rebuild container
 docker build -t cruorg-proxy:stage .
 
-# 3. Deploy to stage ECS
+# 4. Deploy to stage ECS
 # (Follow your normal ECS deployment process)
 
-# 4. Verify deployment
-docker exec cruorg-proxy cat /usr/local/openresty/nginx/conf/filter.lua | head -5
+# 5. Verify deployment - check startup logs for configuration
+docker logs cruorg-proxy 2>&1 | grep "Security Filter Config"
+# Expected: Security Filter Config: MONITORING_MODE=true, MONITORING_MODE_WORDPRESS=true
 
-# 5. Monitor logs
-docker logs -f cruorg-proxy 2>&1 | grep BLOCKED
+# 6. Monitor blocked requests
+docker logs -f cruorg-proxy 2>&1 | grep MONITORING_MODE
 ```
 
 ### Validation Tests

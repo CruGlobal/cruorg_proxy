@@ -48,11 +48,25 @@ Log analysis revealed 6% of traffic (1,203/20,000 requests) is malicious. While 
 **Purpose**: Main security filtering logic
 
 **Key Features**:
-- **MONITORING_MODE**: Set to `true` for testing (logs but doesn't block)
+- **Runtime Configuration**: Monitoring modes controlled via environment variables
 - **Redis Integration**: Queries `cruorg:upstreams` Redis hash (same as `target.lua`)
 - **Context Detection**: Identifies AEM vs WordPress paths dynamically from Redis
-- **Cache-Aware**: Checks nginx shared cache first, then Redis
+- **Shared Memory Optimization**: Checks nginx shared memory first, then Redis
 - **13 Security Rules**: Organized by scope (global, AEM-only, WordPress-only)
+
+**Environment Variables**:
+- `SECURITY_FILTER_MONITORING_MODE`: Controls all rules (default: `"true"`)
+  - Set to `"false"` to enable blocking for global and AEM-specific rules
+  - Any other value (including unset) keeps monitoring mode active
+- `SECURITY_FILTER_MONITORING_MODE_WORDPRESS`: Controls WordPress-specific rules (default: `"true"`)
+  - Set to `"false"` to enable blocking for WordPress rules (Rules 12-13)
+  - Independent from main MONITORING_MODE for granular rollout
+  - Any other value (including unset) keeps monitoring mode active
+
+**Configuration Logged on Startup**:
+```
+Security Filter Config: MONITORING_MODE=true, MONITORING_MODE_WORDPRESS=true
+```
 
 **WordPress Path Detection** (Dynamic from Redis):
 - Queries Redis `cruorg:upstreams` hash from `redirects.tf`
