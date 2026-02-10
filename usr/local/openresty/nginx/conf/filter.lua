@@ -110,20 +110,28 @@ if not user_agent or user_agent == "" or user_agent == "-" then
     end
 end
 
--- Rule 2: Block known scanner user agents (high confidence patterns)
+-- Rule 2: Block known vulnerability scanners and penetration testing tools
+-- These tools are used to probe for security vulnerabilities and have no legitimate
+-- reason to access production services. Blocking them prevents:
+-- - Vulnerability reconnaissance (attackers mapping our infrastructure)
+-- - Exploitation attempts (automated attacks against discovered vulnerabilities)
+-- - Resource consumption (scanners generate high request volumes)
+-- - False security alerts (reducing noise in monitoring systems)
+--
+-- Note: Legitimate security scanning should use authorized IPs (WAF allowlist)
 local scanner_patterns = {
-    "nikto",
-    "nmap",
-    "sqlmap",
-    "masscan",
-    "zgrab",
-    "shodan",
-    "censys",
-    "nessus",
-    "metasploit",
-    "burp",
-    "acunetix",
-    "owasp",
+    "nikto",        -- Web vulnerability scanner
+    "nmap",         -- Network port scanner
+    "sqlmap",       -- SQL injection scanner
+    "masscan",      -- Fast port scanner
+    "zgrab",        -- Internet-wide scanner
+    "shodan",       -- Internet-connected device scanner
+    "censys",       -- Internet asset scanner
+    "nessus",       -- Vulnerability scanner
+    "metasploit",   -- Penetration testing framework
+    "burp",         -- Web security testing tool (Burp Suite)
+    "acunetix",     -- Web vulnerability scanner
+    "owasp",        -- OWASP ZAP scanner
 }
 
 local ua_lower = string.lower(user_agent)
