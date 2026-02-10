@@ -16,19 +16,24 @@ local method = ngx.var.request_method
 -- ============================================
 local BLOCK_RESPONSE = 403
 local LOG_BLOCKED = true
-local MONITORING_MODE = true  -- Set to false to enable blocking
+local MONITORING_MODE = true  -- Set to false to enable blocking for all rules
+local MONITORING_MODE_WORDPRESS = true  -- Set to false to enable blocking for WordPress-specific rules (Rules 12-13)
 
 -- ============================================
 -- HELPER FUNCTIONS
 -- ============================================
-local function block_request(reason)
+local function block_request(reason, wordpress_specific)
     if LOG_BLOCKED then
         ngx.log(ngx.WARN, "BLOCKED: ", reason, " | URI: ", uri, " | UA: ", user_agent, " | IP: ", ngx.var.remote_addr, " | Method: ", method)
     end
 
-    if MONITORING_MODE then
+    -- Check if we're in monitoring mode (global or WordPress-specific)
+    local in_monitoring = MONITORING_MODE or (wordpress_specific and MONITORING_MODE_WORDPRESS)
+
+    if in_monitoring then
         -- In monitoring mode, log but don't block
-        ngx.log(ngx.WARN, "MONITORING_MODE: Would have blocked - ", reason)
+        local mode_type = wordpress_specific and "MONITORING_MODE_WORDPRESS" or "MONITORING_MODE"
+        ngx.log(ngx.WARN, mode_type, ": Would have blocked - ", reason)
         return
     end
 
@@ -239,13 +244,18 @@ if is_wordpress_path then
 
     -- Rule 12: Block PHP execution in uploads directory
     -- This is critical - even WordPress sites shouldn't execute PHP from uploads
+    -- Legitimate WordPress: Media files only (images, videos, PDFs)
+    -- Attack vector: Uploaded webshells/malware attempting to execute
     if ngx.re.match(uri, "/wp%-content/uploads/.*\\.php", "ijo") then
-        block_request("PHP execution attempt in WordPress uploads")
+        block_request("PHP execution attempt in WordPress uploads", true)
     end
 
-    -- Rule 13: Block suspicious WordPress plugin/theme access patterns
+    -- Rule 13: Block directory traversal in WordPress plugin/theme paths
+    -- Legitimate WordPress: Never uses ../ in plugin/theme URLs
+    -- Attack vector: Path traversal to escape plugin directory and access other files
+    -- Example attack: /wp-content/plugins/vulnerable-plugin/../../wp-config.php
     if ngx.re.match(uri, "/wp%-content/(plugins|themes)/[^/]+/\\.\\./", "ijo") then
-        block_request("Directory traversal in WordPress plugins/themes")
+        block_request("Directory traversal in WordPress plugins/themes", true)
     end
 
 end
