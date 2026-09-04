@@ -1,4 +1,4 @@
-FROM openresty/openresty:1.25.3.1-2-alpine-apk
+FROM openresty/openresty:1.25.3.2-5-alpine-apk
 
 LABEL com.datadoghq.ad.check_names='["nginx"]'
 LABEL com.datadoghq.ad.init_configs='[{}]'
@@ -7,7 +7,10 @@ LABEL com.datadoghq.ad.logs='[{"source": "nginx"}]'
 
 HEALTHCHECK --interval=10s --timeout=5s CMD curl -f http://127.0.0.1:81/health-check || exit 1
 
-RUN apk add --no-cache openresty-opm \
+# Keep this pinned to the base image's openresty version. openresty-opm depends
+# on an exact openresty, and its Alpine repo only carries recent builds, so an
+# unpinned add eventually resolves to one that conflicts with the base image.
+RUN apk add --no-cache openresty-opm=1.25.3.2-r0 \
     && opm get 3scale/lua-resty-url
 
 COPY usr/ /usr/
