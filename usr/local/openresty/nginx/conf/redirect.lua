@@ -64,10 +64,31 @@ if (not target) or (target == ngx.null) then
   end
 
   local arr_rewrite = red:array_to_hash(redirects)
-  for pattern, sub in pairs(arr_rewrite) do
-    -- If the uri matches this rule, redirect to the target uri
-    local new_uri, index, err = ngx.re.gsub(ngx.var.uri, pattern, sub, "i")
-    if index > 0 then
+
+  -- Iterate in a fixed order. pairs() order is unspecified, and LuaJIT reseeds
+  -- its string hash per process, so when two patterns match one URI the winner
+  -- varies between worker processes. Longest pattern first makes the more
+  -- specific of an overlapping pair win; the length tie-break keeps the order
+  -- total so every worker resolves a URI the same way.
+  local ordered = {}
+  for pattern in pairs(arr_rewrite) do
+    ordered[#ordered + 1] = pattern
+  end
+  table.sort(ordered, function(a, b)
+    if #a ~= #b then
+      return #a > #b
+    end
+    return a < b
+  end)
+
+  for _, pattern in ipairs(ordered) do
+    -- If the uri matches this rule, redirect to the target uri.
+    -- gsub returns nil for index on a malformed pattern, so guard the compare:
+    -- bare `index > 0` throws, which surfaces as a 500 on every request.
+    local new_uri, index, err = ngx.re.gsub(ngx.var.uri, pattern, arr_rewrite[pattern], "i")
+    if err then
+      ngx.log(ngx.ERR, "bad rewrite pattern ", pattern, ": ", err)
+    elseif index and index > 0 then
       target = new_uri
       break
     end
