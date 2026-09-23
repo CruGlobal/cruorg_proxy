@@ -18,3 +18,6 @@ COPY usr/ /usr/
 EXPOSE 80
 
 CMD ["openresty", "-g", "daemon off;"]
+
+ARG VERSION="dev"
+ENV DD_VERSION=${VERSION}

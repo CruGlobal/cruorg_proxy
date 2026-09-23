@@ -1,13 +1,13 @@
 name: Build & Deploy ECS
 
 on:
-  push:
-    branches:
-      # Automatically build and deploy master and staging. Additional branches may be added.
-      - master
-      - staging
+  # Parked v1 workflow: do not re-add push triggers. This app builds and deploys
+  # through .github/workflows/pipeline-v2.yml. Dispatch-only, which makes it an
+  # escape hatch during the merge-to-apply window and a historical record after
+  # that: the prod Terraform apply retires the IAM identity this build assumes.
+  # Restoring a push trigger would double-build every merge and push v1's
+  # environment-specific `production-<n>` tags alongside v2's candidates.
   workflow_dispatch:
-    # Allows manual build and deploy of any branch/ref
     inputs:
       auto-deploy:
         type: boolean
