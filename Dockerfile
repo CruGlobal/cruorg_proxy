@@ -1,20 +1,35 @@
-FROM openresty/openresty:1.25.3.2-5-alpine-apk
+# CADDY_VERSION set by build.sh from .tool-versions
+ARG CADDY_VERSION=0
+FROM public.ecr.aws/docker/library/caddy:${CADDY_VERSION}-builder-alpine AS builder
 
-LABEL com.datadoghq.ad.check_names='["nginx"]'
+WORKDIR /usr/src/cruproxy
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 go build -v -o /usr/bin/cruproxy ./cmd/cruproxy
+
+ARG CADDY_VERSION=0
+FROM public.ecr.aws/docker/library/caddy:${CADDY_VERSION}-alpine
+
+COPY --from=builder /usr/bin/cruproxy /usr/bin/cruproxy
+
+LABEL com.datadoghq.ad.check_names='["openmetrics"]'
 LABEL com.datadoghq.ad.init_configs='[{}]'
-LABEL com.datadoghq.ad.instances='[{"nginx_status_url": "http://%%host%%:81/nginx_status/"}]'
-LABEL com.datadoghq.ad.logs='[{"source": "nginx"}]'
+LABEL com.datadoghq.ad.instances='[{"openmetrics_endpoint": "http://%%host%%:6000/metrics","namespace":"caddy","metrics":["caddy_http_.*"]}]'
+LABEL com.datadoghq.ad.logs='[{"source": "caddy"}]'
 
-HEALTHCHECK --interval=10s --timeout=5s CMD curl -f http://127.0.0.1:81/health-check || exit 1
+HEALTHCHECK --interval=10s --timeout=5s \
+  CMD wget -q --tries=1 --spider http://127.0.0.1/monitor.html || exit 1
 
-# Keep this pinned to the base image's openresty version. openresty-opm depends
-# on an exact openresty, and its Alpine repo only carries recent builds, so an
-# unpinned add eventually resolves to one that conflicts with the base image.
-RUN apk add --no-cache openresty-opm=1.25.3.2-r0 \
-    && opm get 3scale/lua-resty-url
+RUN apk upgrade --no-cache
 
-COPY usr/ /usr/
+COPY Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80
 
-CMD ["openresty", "-g", "daemon off;"]
+CMD ["cruproxy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+
+ARG VERSION="dev"
+ENV DD_VERSION=${VERSION}

@@ -1,0 +1,81 @@
+{
+	admin off
+	persist_config off
+	# TLS ends at the ALB; the container only speaks plain HTTP.
+	auto_https off
+
+	log {
+		output stdout
+		format json
+		level {$LOG_LEVEL:INFO}
+	}
+
+	servers {
+		trusted_proxies static {$TRUSTED_PROXIES:10.16.0.0/16}
+		# Read X-Forwarded-For right to left so a visitor can't spoof client_ip.
+		trusted_proxies_strict
+		timeouts {
+			read_body 10m
+			idle 30s
+		}
+	}
+
+	metrics
+}
+
+:80 {
+	log
+	log_skip /monitor.html
+
+	rewrite /cru-nav.js /cru-nav.json
+
+	route {
+		cruproxy {
+			redis {$STORAGE_REDIS_HOST}:{$STORAGE_REDIS_PORT}
+			db {$STORAGE_REDIS_DB_INDEX}
+			vanity_key {$VANITY_KEY}
+			rewrites_key {$REWRITES_KEY}
+			upstreams_key {$UPSTREAMS_KEY}
+			forward_query_key {$FORWARD_QUERY_KEY}
+			refresh 60s
+			min_reload 10s
+		}
+
+		@vip vars {http.cruproxy.upstream} VIP_ADDR
+		handle @vip {
+			# WordPress VIP serves by the visitor's host; Caddy would send the upstream's.
+			reverse_proxy {$VIP_ADDR} {
+				header_up Host {host}
+				header_up X-Real-IP {client_ip}
+				transport http {
+					dial_timeout 5s
+					tls_timeout 5s
+					response_header_timeout 60s
+				}
+			}
+		}
+
+		handle {
+			# AEM's CDN requires the Host header to be the origin domain.
+			reverse_proxy {$DEFAULT_PROXY_TARGET} {
+				header_up Host {http.reverse_proxy.upstream.host}
+				header_up X-Real-IP {client_ip}
+				header_up X-AEM-Edge-Key {$AEM_EDGE_KEY}
+				transport http {
+					dial_timeout 5s
+					tls_timeout 5s
+					response_header_timeout 60s
+				}
+			}
+		}
+	}
+
+	handle_errors {
+		header Content-Type "text/html; charset=utf-8"
+		respond "<!doctype html><title>Cru</title><h1>Something went wrong</h1><p>Please try again in a moment.</p>" {err.status_code}
+	}
+}
+
+:6000 {
+	metrics /metrics
+}
