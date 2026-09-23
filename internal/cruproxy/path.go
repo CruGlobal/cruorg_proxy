@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-var purgeParams = []string{"purge_vanity", "purge_target"}
-
 // NormalizePath merges slashes and resolves dot segments the way nginx does
 // before matching, keeping a trailing slash.
 func NormalizePath(p string) string {
@@ -28,9 +26,8 @@ func MergeQuery(target, incoming string) string {
 	if err != nil || len(in) == 0 {
 		return target
 	}
-	for _, p := range purgeParams {
-		in.Del(p)
-	}
+	in.Del("purge_vanity")
+	in.Del("purge_target")
 
 	frag := ""
 	if i := strings.IndexByte(target, '#'); i >= 0 {

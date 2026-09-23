@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Go modules. Minor and patch bumps are grouped into a single weekly PR to
+  # keep review cost flat. Major version bumps are left ungrouped so each one
+  # gets its own PR and a proper migration check.
+  # ──────────────────────────────────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # GitHub Actions used by .github/workflows/**. Same policy: one batched PR
+  # per week for minor + patch bumps; majors remain per-PR so any breaking
+  # change in an action surface surfaces distinctly.
+  # ──────────────────────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # No `docker` ecosystem entry on purpose. The Dockerfile's base image tag is
+  # composed at build time from a build arg —
+  # `FROM public.ecr.aws/docker/library/caddy:${CADDY_VERSION}-alpine`, where
+  # build.sh reads the real version out of `.tool-versions`. Dependabot would
+  # resolve the ARG's placeholder default (`0`) instead and open bogus PRs
+  # against a tag this image never uses. Caddy is bumped by editing
+  # `.tool-versions`; `gomod` above still covers the Caddy Go modules the
+  # custom build compiles in, which is where CVEs actually surface.

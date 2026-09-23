@@ -1,0 +1,58 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  CGO_ENABLED: '0'
+
+tasks:
+  default:
+    cmds:
+      - task: fmt
+      - task: lint
+
+  build:
+    desc: Build the cruproxy binary
+    cmds:
+      - go build -v -o cruproxy ./cmd/cruproxy
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - golangci-lint fmt
+
+  lint:
+    desc: Lint the code
+    cmds:
+      - golangci-lint run --fix
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test -cover -coverprofile coverage.out -covermode atomic -timeout 120s {{.CLI_ARGS}} ./...
+
+  "caddy:fmt":
+    desc: Format the Caddyfile
+    cmds:
+      - go run ./cmd/cruproxy fmt --overwrite Caddyfile
+
+  "caddy:validate":
+    desc: Validate the Caddyfile
+    env:
+      STORAGE_REDIS_HOST: 127.0.0.1
+      STORAGE_REDIS_PORT: '1'
+      STORAGE_REDIS_DB_INDEX: '3'
+      VANITY_KEY: cruorg:vanities
+      REWRITES_KEY: cruorg:regex
+      UPSTREAMS_KEY: cruorg:upstreams
+      DEFAULT_PROXY_TARGET: https://publish-p1-e1.adobeaemcloud.com
+      VIP_ADDR: https://wordpress.cru.org
+      AEM_EDGE_KEY: validate
+      LOG_LEVEL: ERROR
+    cmds:
+      - go run ./cmd/cruproxy validate --config Caddyfile --adapter caddyfile
+
+  "parity:run":
+    desc: Side-by-side run against the old image (pass the redirects.tf path after --)
+    cmds:
+      - test/parity/run.sh {{.CLI_ARGS}}

@@ -1,4 +1,4 @@
-package store
+package store_test
 
 import (
 	"context"
@@ -6,10 +6,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/CruGlobal/cruorg_proxy/internal/store"
 )
 
 func TestRedirectVanityBeforeRegex(t *testing.T) {
-	s := Build(
+	s := store.Build(
 		map[string]string{"/campus/x": "/vanity"},
 		map[string]string{"^/campus/(.*)": "/communities/campus/$1"},
 		nil, nil, nil)
@@ -22,19 +24,19 @@ func TestRedirectVanityBeforeRegex(t *testing.T) {
 }
 
 func TestVanityKeysAreExact(t *testing.T) {
-	s := Build(map[string]string{"/whoisJesus": "/x"}, nil, nil, nil, nil)
+	s := store.Build(map[string]string{"/whoisJesus": "/x"}, nil, nil, nil, nil)
 	if _, _, ok := s.Redirect("/whoisJesus", "/whoisjesus"); ok {
 		t.Fatal("mixed-case vanity key matched; nginx never matches these")
 	}
 }
 
 func TestRewriteOrderLongestFirst(t *testing.T) {
-	s := Build(nil, map[string]string{
+	s := store.Build(nil, map[string]string{
 		"^/ministries-and-locations(.*)":                               "/communities/locations$1",
 		"^/ministries-and-locations/ministries(.*)":                    "/communities/ministries$1",
 		"^/ministries-and-locations/ministries/athletes-in-action(.*)": "/communities/athletes$1",
 	}, nil, nil, nil)
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		got, _, _ := s.Redirect("/ministries-and-locations/ministries/athletes-in-action/x", "")
 		if got != "/communities/athletes/x" {
 			t.Fatalf("got %q", got)
@@ -43,7 +45,7 @@ func TestRewriteOrderLongestFirst(t *testing.T) {
 }
 
 func TestGroupRefFollowedByText(t *testing.T) {
-	s := Build(nil, map[string]string{"^(.*).htm$": "$1.html", "^/a/(.*)": "/b/$1x"}, nil, nil, nil)
+	s := store.Build(nil, map[string]string{"^(.*).htm$": "$1.html", "^/a/(.*)": "/b/$1x"}, nil, nil, nil)
 	if got, _, _ := s.Redirect("/foo/bar.htm", ""); got != "/foo/bar.html" {
 		t.Fatalf("got %q", got)
 	}
@@ -53,18 +55,24 @@ func TestGroupRefFollowedByText(t *testing.T) {
 }
 
 func TestUpstream(t *testing.T) {
-	s := Build(nil, nil, map[string]string{"^/wp-admin": "VIP_ADDR", "^.*\\.php.*": "VIP_ADDR"}, nil, nil)
+	s := store.Build(nil, nil, map[string]string{"^/wp-admin": "VIP_ADDR", "^.*\\.php.*": "VIP_ADDR"}, nil, nil)
 	if got := s.Upstream("/wp-admin/x"); got != "VIP_ADDR" {
 		t.Fatalf("got %q", got)
 	}
-	if got := s.Upstream("/us/en.html"); got != DefaultUpstream {
+	if got := s.Upstream("/us/en.html"); got != store.DefaultUpstream {
 		t.Fatalf("got %q", got)
 	}
 }
 
 func TestBadPatternSkipped(t *testing.T) {
 	var bad []string
-	s := Build(nil, map[string]string{"^/(a": "/x", "^/b": "/y"}, nil, nil, func(p string, _ error) { bad = append(bad, p) })
+	s := store.Build(
+		nil,
+		map[string]string{"^/(a": "/x", "^/b": "/y"},
+		nil,
+		nil,
+		func(p string, _ error) { bad = append(bad, p) },
+	)
 	if len(s.Rewrites) != 1 || len(bad) != 1 {
 		t.Fatalf("rewrites %d bad %v", len(s.Rewrites), bad)
 	}
@@ -86,7 +94,7 @@ func (f *fakeSource) HGetAll(_ context.Context, key string) (map[string]string, 
 
 func TestLoadKeepsLastGoodCopy(t *testing.T) {
 	src := &fakeSource{data: map[string]map[string]string{"v": {"/a": "/b"}}}
-	st := New(src, Keys{Vanities: "v"}, 0, nil)
+	st := store.New(src, store.Keys{Vanities: "v"}, 0, nil)
 	if err := st.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +109,7 @@ func TestLoadKeepsLastGoodCopy(t *testing.T) {
 
 func TestEmptyRequiredHashFails(t *testing.T) {
 	src := &fakeSource{data: map[string]map[string]string{"v": {"/a": "/b"}}}
-	st := New(src, Keys{Vanities: "v"}, 0, nil)
+	st := store.New(src, store.Keys{Vanities: "v"}, 0, nil)
 	_ = st.Load(context.Background())
 	src.data["v"] = map[string]string{}
 	if err := st.Load(context.Background()); err == nil {
@@ -114,7 +122,7 @@ func TestEmptyRequiredHashFails(t *testing.T) {
 
 func TestReloadRateLimited(t *testing.T) {
 	src := &fakeSource{data: map[string]map[string]string{"v": {"/a": "/b"}}}
-	st := New(src, Keys{Vanities: "v"}, time.Hour, nil)
+	st := store.New(src, store.Keys{Vanities: "v"}, time.Hour, nil)
 	_ = st.Load(context.Background())
 	before := src.calls
 	_ = st.Reload(context.Background())

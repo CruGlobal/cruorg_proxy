@@ -23,6 +23,13 @@ import (
 // UpstreamVar is the placeholder the Caddyfile matches on to pick a route.
 const UpstreamVar = "http.cruproxy.upstream"
 
+const (
+	defaultRefresh   = 60 * time.Second
+	defaultMinReload = 10 * time.Second
+	loadTimeout      = 5 * time.Second
+	retryWait        = 2 * time.Second
+)
+
 var (
 	_ caddy.Provisioner           = (*Handler)(nil)
 	_ caddy.CleanerUpper          = (*Handler)(nil)
@@ -32,11 +39,14 @@ var (
 
 func init() {
 	caddy.RegisterModule(Handler{})
-	httpcaddyfile.RegisterHandlerDirective("cruproxy", func(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
-		var m Handler
-		err := m.UnmarshalCaddyfile(h.Dispenser)
-		return &m, err
-	})
+	httpcaddyfile.RegisterHandlerDirective(
+		"cruproxy",
+		func(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
+			var m Handler
+			err := m.UnmarshalCaddyfile(h.Dispenser)
+			return &m, err
+		},
+	)
 }
 
 // Handler redirects vanity and rewrite matches and tags the rest with an
@@ -86,10 +96,10 @@ func (h *Handler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	redis.SetLogger(zapRedisLogger{h.logger.Named("redis")})
 	if h.Refresh == 0 {
-		h.Refresh = caddy.Duration(60 * time.Second)
+		h.Refresh = caddy.Duration(defaultRefresh)
 	}
 	if h.MinReload == 0 {
-		h.MinReload = caddy.Duration(10 * time.Second)
+		h.MinReload = caddy.Duration(defaultMinReload)
 	}
 	if h.HealthPath == "" {
 		h.HealthPath = "/monitor.html"
@@ -118,7 +128,7 @@ func (h *Handler) Provision(ctx caddy.Context) error {
 }
 
 func (h *Handler) load(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, loadTimeout)
 	defer cancel()
 	if err := h.store.Load(ctx); err != nil {
 		h.logger.Error("redis load failed, keeping last good copy", zap.Error(err))
@@ -136,7 +146,7 @@ func (h *Handler) loop(ctx context.Context) {
 	for {
 		wait := time.Duration(h.Refresh)
 		if h.store.Get() == nil {
-			wait = 2 * time.Second
+			wait = retryWait
 		}
 		select {
 		case <-ctx.Done():

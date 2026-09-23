@@ -93,7 +93,7 @@ func compile(raw map[string]string, template bool, bad func(string, error)) []Ru
 // Redirect returns the redirect target for a path and the key that produced
 // it (the vanity path or the regex pattern). path is the normalized path in
 // its original case; lower is the same path lowercased.
-func (s *Snapshot) Redirect(path, lower string) (target, key string, ok bool) {
+func (s *Snapshot) Redirect(path, lower string) (string, string, bool) {
 	if t, found := s.Vanities[lower]; found {
 		return t, lower, true
 	}
