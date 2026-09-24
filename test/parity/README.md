@@ -23,3 +23,16 @@ document, and starting with an unreadable rules file. Metrics are on
 Use `docker compose pause`, not `stop`, for failure tests. Stopping an upstream
 removes its network alias, and Docker DNS then resolves the real public
 hostname, so requests leak to the real site.
+
+## Live environments
+
+`stage_probe.py` checks a real environment through CloudFront instead of the
+local fakes. Run it before and after an image change and compare:
+
+    test/parity/stage_probe.py <cru-terraform>/applications/cruorg_proxy/stage/redirects.tf https://stage.cru.org before.jsonl
+    test/parity/stage_probe.py <same redirects.tf> https://stage.cru.org after.jsonl
+    test/parity/stage_probe.py --compare before.jsonl after.jsonl
+
+It compares status and `Location`, and for proxied requests whether AEM or
+WordPress VIP answered. It waits 0.25s between requests so the WAF rate rules
+don't trip.
