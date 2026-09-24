@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CruGlobal/cruorg_proxy/internal/proxy"
 	"github.com/CruGlobal/cruorg_proxy/internal/store"
@@ -194,6 +195,29 @@ func TestRawPathPassedThrough(t *testing.T) {
 	h, _ := newProxy(t, true)
 	if s := decode(t, do(h, "/a//b/../c", nil)); s.Path != "/a//b/../c" {
 		t.Fatalf("path %q", s.Path)
+	}
+}
+
+type hangingSource struct{}
+
+func (hangingSource) Fetch(ctx context.Context, _ string) ([]byte, string, error) {
+	<-ctx.Done()
+	return nil, "", ctx.Err()
+}
+
+func TestPurgeReloadIsBounded(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	h := &proxy.Handler{
+		Store:        store.New(hangingSource{}, 0, nil),
+		Upstreams:    map[string]http.Handler{store.DefaultUpstream: http.NotFoundHandler()},
+		HealthPath:   "/monitor.html",
+		Logger:       logger,
+		PurgeTimeout: 50 * time.Millisecond,
+	}
+	start := time.Now()
+	do(h, "/x?purge_vanity=1", nil)
+	if elapsed := time.Since(start); elapsed > 2*time.Second {
+		t.Fatalf("purge against a hung source took %s", elapsed)
 	}
 }
 

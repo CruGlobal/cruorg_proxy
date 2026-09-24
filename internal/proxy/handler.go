@@ -3,19 +3,38 @@
 package proxy
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/CruGlobal/cruorg_proxy/internal/store"
 )
 
+// DefaultPurgeTimeout bounds a purge-triggered reload. The reload holds the
+// store lock, so a slow source must not stall other purges or the refresh.
+const DefaultPurgeTimeout = 5 * time.Second
+
 // Handler serves every request the ALB forwards.
 type Handler struct {
-	Store      *store.Store
-	Upstreams  map[string]http.Handler
-	HealthPath string
-	Logger     *slog.Logger
+	Store        *store.Store
+	Upstreams    map[string]http.Handler
+	HealthPath   string
+	Logger       *slog.Logger
+	PurgeTimeout time.Duration
+}
+
+func (h *Handler) purge(r *http.Request) {
+	timeout := h.PurgeTimeout
+	if timeout <= 0 {
+		timeout = DefaultPurgeTimeout
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+	if _, err := h.Store.Reload(ctx); err != nil {
+		h.Logger.ErrorContext(ctx, "purge reload failed", slog.Any("error", err))
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -36,9 +55,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	if query.Has("purge_vanity") || query.Has("purge_target") {
-		if _, err := h.Store.Reload(r.Context()); err != nil {
-			h.Logger.Error("purge reload failed", slog.Any("error", err))
-		}
+		h.purge(r)
 	}
 
 	info := requestInfo(r)

@@ -24,6 +24,9 @@ HEALTHCHECK --interval=10s --timeout=5s CMD ["/cruproxy", "healthcheck"]
 
 EXPOSE 80 6000
 
+# The ECS task has a 256 MB hard limit; keep the Go heap target under it.
+ENV GOMEMLIMIT=200MiB
+
 ENTRYPOINT ["/cruproxy"]
 
 ARG VERSION="dev"
