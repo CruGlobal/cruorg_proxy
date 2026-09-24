@@ -69,14 +69,14 @@ There are **no database migrations**; Terraform declares
 
 ## Leftovers you can ignore
 
-- The **`staging` branch** and the **`On Staging` label** were the v1
-  merge-bot's deploy targets. Nothing uses them; Terraform stopped managing them
-  without deleting them.
 - `.github/workflows/build-deploy-ecs.yml` is the **parked v1 workflow**,
-  dispatch-only on purpose. After the prod Terraform apply, its build fails with
-  `AccessDenied`; keep it as the record of how the app used to ship.
-- Old branches such as `feature/add-lua-security-filter`,
-  `revert-storylines-redirect` and `test-wordpress-lab` belong to closed PRs.
+  dispatch-only on purpose. Its build fails with `AccessDenied` now that v1's
+  build identity is retired; keep it as the record of how the app used to ship.
+- That workflow pins `CruGlobal/.github` at `@v1`. **Don't bump it to `@v2`**:
+  v2 of those workflows is a different pipeline. Dependabot is set to ignore
+  that major version; close any PR that proposes it.
+- There is no `staging` branch or `On Staging` label any more. Anything that
+  mentions them, or a merge-bot, describes the v1 flow.
 - A rebuild of this proxy in Go, with the rules moving out of Redis, is in
   progress separately. Until it merges, this file describes the OpenResty app.
 
