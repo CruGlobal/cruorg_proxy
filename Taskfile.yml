@@ -1,0 +1,49 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  CGO_ENABLED: '0'
+
+tasks:
+  default:
+    cmds:
+      - task: fmt
+      - task: lint
+
+  build:
+    desc: Build the cruproxy binary
+    cmds:
+      - go build -v -o cruproxy ./cmd/cruproxy
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - golangci-lint fmt
+
+  lint:
+    desc: Lint the code
+    cmds:
+      - golangci-lint run --fix
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test -cover -coverprofile coverage.out -covermode atomic -timeout 120s {{.CLI_ARGS}} ./...
+
+  run:
+    desc: Run locally against a rules file (task run -- path/to/rules.json)
+    env:
+      RULES_FILE: '{{.CLI_ARGS}}'
+      LISTEN_ADDR: ':8080'
+      METRICS_ADDR: ':6060'
+      DEFAULT_PROXY_TARGET: https://publish-p56256-e778753.adobeaemcloud.com
+      VIP_ADDR: https://wordpress-stage.cru.org
+      LOG_LEVEL: DEBUG
+    cmds:
+      - go run ./cmd/cruproxy
+
+  "parity:run":
+    desc: Side-by-side run against the last OpenResty image (task parity:run -- <redirects.tf>)
+    cmds:
+      - test/parity/run.sh {{.CLI_ARGS}}

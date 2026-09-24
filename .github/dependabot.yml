@@ -1,8 +1,25 @@
 version: 2
 
 updates:
-  # GitHub Actions used by .github/workflows/**. Minor and patch bumps are
-  # grouped into one weekly PR; majors stay ungrouped so each gets its own PR.
+  # Go modules. Minor and patch bumps are grouped into one weekly PR; majors
+  # stay ungrouped so each gets its own PR.
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # GitHub Actions used by .github/workflows/**.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -18,7 +35,18 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    ignore:
+      # The parked v1 workflow pins CruGlobal/.github at v1; v2 is a different
+      # pipeline, so a major bump there would break it.
+      - dependency-name: "CruGlobal/.github*"
+        update-types: ["version-update:semver-major"]
 
-  # No `docker` entry yet: the Dockerfile pins openresty-opm to the base image's
-  # exact openresty version, so a base-image bump alone breaks the build, and no
-  # PR check builds the image to catch it before auto-merge.
+  # Base images in the Dockerfile (literal tags, so Dependabot can read them).
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "build"
+      include: "scope"
