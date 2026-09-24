@@ -80,13 +80,21 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			}
 		},
 		Transport: transport,
-		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, err error) {
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			// The visitor went away before the upstream answered. nginx logged
+			// these as 499; they are not upstream failures.
+			if errors.Is(err, context.Canceled) && r.Context().Err() != nil {
+				logger.DebugContext(r.Context(), "client closed request",
+					slog.String("upstream", cfg.Name), slog.Any("error", err))
+				w.WriteHeader(StatusClientClosedRequest)
+				return
+			}
 			status := http.StatusBadGateway
 			var ne net.Error
 			if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout()) {
 				status = http.StatusGatewayTimeout
 			}
-			logger.Error(
+			logger.ErrorContext(r.Context(),
 				"upstream error",
 				slog.String("upstream", cfg.Name),
 				slog.Int("status", status),
@@ -96,6 +104,10 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 		},
 	}, nil
 }
+
+// StatusClientClosedRequest is nginx's non-standard code for a request the
+// client abandoned before a response was sent.
+const StatusClientClosedRequest = 499
 
 // ErrorPage writes the proxy's own error page.
 func ErrorPage(w http.ResponseWriter, status int) {

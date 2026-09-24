@@ -154,11 +154,19 @@ type Store struct {
 	mu       sync.Mutex
 	etag     string
 	lastLoad time.Time
+	onLoad   func(changed bool, err error, snap *Snapshot)
 }
 
 // New returns a Store. minReload limits how often Reload hits the Source.
 func New(src Source, minReload time.Duration, bad func(string, error)) *Store {
 	return &Store{src: src, minReload: minReload, bad: bad}
+}
+
+// OnLoad registers a hook called after every load attempt, whether a timer
+// or a purge triggered it, so logs and metrics see both. Set it before the
+// first load; it runs with the store lock held and must not call back in.
+func (s *Store) OnLoad(f func(changed bool, err error, snap *Snapshot)) {
+	s.onLoad = f
 }
 
 // Get returns the current Snapshot, or nil before the first successful load.
@@ -176,6 +184,14 @@ func (s *Store) Load(ctx context.Context) (bool, error) {
 }
 
 func (s *Store) load(ctx context.Context) (bool, error) {
+	changed, err := s.fetch(ctx)
+	if s.onLoad != nil {
+		s.onLoad(changed, err, s.snap.Load())
+	}
+	return changed, err
+}
+
+func (s *Store) fetch(ctx context.Context) (bool, error) {
 	s.lastLoad = time.Now()
 	etag := s.etag
 	if s.snap.Load() == nil {

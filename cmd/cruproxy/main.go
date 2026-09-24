@@ -55,6 +55,9 @@ func duration(key, fallback string) (time.Duration, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", key, err)
 	}
+	if d <= 0 {
+		return 0, fmt.Errorf("%s: must be positive, got %s", key, d)
+	}
 	return d, nil
 }
 
@@ -149,14 +152,19 @@ type rulesLoader struct {
 func (l *rulesLoader) load(ctx context.Context) {
 	lctx, cancel := context.WithTimeout(ctx, loadTimeout)
 	defer cancel()
-	changed, err := l.store.Load(lctx)
-	l.metrics.LoadResult(changed, err, l.store.Get())
+	_, _ = l.store.Load(lctx)
+}
+
+// report is the store's OnLoad hook, so timed loads and purge reloads log and
+// count the same way.
+func (l *rulesLoader) report(changed bool, err error, s *store.Snapshot) {
+	l.metrics.LoadResult(changed, err, s)
+	ctx := context.Background()
 	switch {
 	case err != nil:
 		l.logger.ErrorContext(ctx, "rules load failed, keeping last good copy",
 			slog.String("source", l.where), slog.Any("error", err))
 	case changed:
-		s := l.store.Get()
 		l.logger.InfoContext(ctx, "rules loaded", slog.String("source", l.where),
 			slog.Int("vanities", len(s.Vanities)), slog.Int("rewrites", len(s.Rewrites)),
 			slog.Int("upstreams", len(s.Upstreams)), slog.Int("forward_query", len(s.ForwardQuery)))
@@ -223,6 +231,7 @@ func run() error {
 		logger.Error("bad pattern", slog.String("pattern", p), slog.Any("error", perr))
 	})
 	loader := &rulesLoader{store: rules, where: where, refresh: cfg.refresh, metrics: metrics, logger: logger}
+	rules.OnLoad(loader.report)
 	loader.load(ctx)
 	go loader.loop(ctx)
 

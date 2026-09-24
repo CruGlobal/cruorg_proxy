@@ -36,8 +36,8 @@ updates:
       prefix: "ci"
       include: "scope"
     ignore:
-      # The parked v1 workflow pins CruGlobal/.github at v1; v2 is a different
-      # pipeline, so a major bump there would break it.
+      # CruGlobal/.github majors are fleet-wide moves: v1 -> v2 would break the
+      # parked v1 workflow, and the @v2 pipeline refs move only on purpose.
       - dependency-name: "CruGlobal/.github*"
         update-types: ["version-update:semver-major"]
 

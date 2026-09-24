@@ -28,6 +28,8 @@ func TestMergeQuery(t *testing.T) {
 		{"https://x.com/e/?e=31709", "e=1&utm_source=a", "https://x.com/e/?e=31709&utm_source=a"},
 		{"/a", "purge_vanity=1", "/a"},
 		{"/a#top", "b=2&purge_target", "/a?b=2#top"},
+		{"https://x.example/e/?e=31709", "utm_source=mail&x=%zz", "https://x.example/e/?e=31709&utm_source=mail"},
+		{"/a", "utm_source=mail;x=1", "/a"},
 	}
 	for _, c := range cases {
 		if got := proxy.MergeQuery(c.target, c.in); got != c.want {

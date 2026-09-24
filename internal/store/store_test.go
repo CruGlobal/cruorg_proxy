@@ -159,6 +159,19 @@ func TestLoadNotModified(t *testing.T) {
 	}
 }
 
+func TestOnLoadSeesPurgeReloads(t *testing.T) {
+	src := &fakeSource{body: validBody(t, "/b"), etag: "1"}
+	st := store.New(src, 0, nil)
+	var calls []bool
+	st.OnLoad(func(changed bool, _ error, _ *store.Snapshot) { calls = append(calls, changed) })
+	_, _ = st.Load(context.Background())
+	src.body, src.etag = validBody(t, "/c"), "2"
+	_, _ = st.Reload(context.Background())
+	if len(calls) != 2 || !calls[1] {
+		t.Fatalf("OnLoad calls %v, want the purge reload reported as changed", calls)
+	}
+}
+
 func TestReloadRateLimited(t *testing.T) {
 	src := &fakeSource{body: validBody(t, "/b"), etag: "1"}
 	st := store.New(src, time.Hour, nil)

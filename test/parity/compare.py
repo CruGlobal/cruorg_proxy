@@ -5,9 +5,11 @@ a, b = load(sys.argv[1]), load(sys.argv[2])
 diffs = collections.defaultdict(list)
 for k, ra in a.items():
     rb = b.get(k)
-    if rb is None: diffs["missing"].append(k); continue
+    if rb is None: diffs["missing in new run"].append((k, "present", None)); continue
     for f in F:
         if ra.get(f) != rb.get(f): diffs[f].append((k, ra.get(f), rb.get(f)))
+for k in b.keys() - a.keys():
+    diffs["only in new run"].append((k, None, "present"))
 print(f"{len(a)} requests compared")
 for f, items in diffs.items():
     print(f"\n== {f}: {len(items)} differ")

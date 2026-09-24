@@ -20,10 +20,11 @@ func NormalizePath(p string) string {
 }
 
 // MergeQuery adds the incoming query to a redirect target. Params already in
-// the target win, and purge params are never forwarded.
+// the target win, and purge params are never forwarded. A malformed pair is
+// dropped on its own; the pairs that parse still carry over.
 func MergeQuery(target, incoming string) string {
-	in, err := url.ParseQuery(incoming)
-	if err != nil || len(in) == 0 {
+	in, _ := url.ParseQuery(incoming)
+	if len(in) == 0 {
 		return target
 	}
 	in.Del("purge_vanity")
