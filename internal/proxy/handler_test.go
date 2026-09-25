@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +34,7 @@ func echo(t *testing.T, name string) *httptest.Server {
 		_ = json.NewEncoder(w).Encode(seen{
 			Name: name, Host: r.Host, SNI: r.TLS.ServerName, Path: r.URL.RequestURI(),
 			XFF: r.Header.Get("X-Forwarded-For"), XFP: r.Header.Get("X-Forwarded-Proto"),
-			XFH: r.Header.Get("X-Forwarded-Host"), XRI: r.Header.Get("X-Real-Ip"),
+			XFH: r.Header.Get("X-Forwarded-Host"), XRI: r.Header.Get("X-Real-IP"),
 			EdgeKey: r.Header.Get("X-Aem-Edge-Key"),
 		})
 	}))
@@ -57,7 +56,7 @@ func (m memSource) Fetch(_ context.Context, etag string) ([]byte, string, error)
 func newProxy(t *testing.T, loaded bool) (http.Handler, *httptest.Server) {
 	t.Helper()
 	aem, vip := echo(t, "aem"), echo(t, "vip")
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	trusted, _ := proxy.ParseTrusted("10.16.0.0/16")
 
 	ups := map[string]http.Handler{}
@@ -206,7 +205,7 @@ func (hangingSource) Fetch(ctx context.Context, _ string) ([]byte, string, error
 }
 
 func TestPurgeReloadIsBounded(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	h := &proxy.Handler{
 		Store:        store.New(hangingSource{}, 0, nil),
 		Upstreams:    map[string]http.Handler{store.DefaultUpstream: http.NotFoundHandler()},
@@ -222,7 +221,7 @@ func TestPurgeReloadIsBounded(t *testing.T) {
 }
 
 func TestUpstreamDown(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	rp, err := proxy.NewUpstream(proxy.UpstreamConfig{Name: "down", URL: "https://127.0.0.1:1"}, nil, logger)
 	if err != nil {
 		t.Fatal(err)

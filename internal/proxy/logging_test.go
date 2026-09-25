@@ -160,6 +160,22 @@ func TestInterimStatusNotRecorded(t *testing.T) {
 	}
 }
 
+func TestLogIncludesForwardedFor(t *testing.T) {
+	srv, logs := stack(t, func(_ http.ResponseWriter, _ *http.Request) {})
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/xff", nil)
+	req.Header.Set("X-Forwarded-For", "93.92.20.238, 3.172.123.99")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	time.Sleep(50 * time.Millisecond)
+	h, _ := logs.requestLog(t, "/xff")["http"].(map[string]any)
+	if got := h["_x_forwarded_for"]; got != "93.92.20.238, 3.172.123.99" {
+		t.Fatalf("http._x_forwarded_for = %v", got)
+	}
+}
+
 func TestLogKeepsOriginalURL(t *testing.T) {
 	srv, logs := stack(t, func(_ http.ResponseWriter, _ *http.Request) {})
 	resp, err := http.Get(srv.URL + "/cru-nav.js")
