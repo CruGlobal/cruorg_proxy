@@ -78,7 +78,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	up, ok := h.Upstreams[name]
 	if !ok {
-		h.Logger.Warn("unknown upstream, using default", slog.String("upstream", name))
+		h.Logger.WarnContext(r.Context(), "unknown upstream, using default", slog.String("upstream", name))
 		name = store.DefaultUpstream
 		up = h.Upstreams[name]
 	}

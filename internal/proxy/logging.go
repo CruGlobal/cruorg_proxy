@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -91,6 +92,9 @@ func Middleware(
 						slog.Int("status_code", sw.status),
 						slog.String("useragent", r.UserAgent()),
 						slog.String("referer", r.Referer()),
+						// Same attribute the nginx pipeline produced. Behind
+						// CloudFront the first address is the visitor.
+						slog.String("_x_forwarded_for", strings.Join(r.Header.Values("X-Forwarded-For"), ", ")),
 					),
 					slog.Group("network",
 						slog.Group("client", slog.String("ip", trusted.ClientIP(r))),

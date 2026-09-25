@@ -74,7 +74,7 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 				proto = "http"
 			}
 			pr.Out.Header.Set("X-Forwarded-Proto", proto)
-			pr.Out.Header.Set("X-Real-Ip", trusted.ClientIP(pr.In))
+			pr.Out.Header.Set("X-Real-IP", trusted.ClientIP(pr.In))
 			for k, v := range cfg.Headers {
 				pr.Out.Header.Set(k, v)
 			}
