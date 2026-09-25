@@ -1,2 +1,9 @@
 .idea
 .env
+/cruproxy
+coverage.out
+test/parity/certs/
+test/parity/resp.txt
+test/parity/hashes.json
+test/parity/rules.json
+test/parity/run-*.jsonl

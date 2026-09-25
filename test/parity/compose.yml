@@ -1,0 +1,46 @@
+name: cruorg-harness
+services:
+  redis:
+    image: redis:7-alpine
+  aem:
+    image: python:3.12-alpine
+    environment: { NAME: aem }
+    command: ["python", "-u", "/echo.py"]
+    volumes: ["./echo.py:/echo.py:ro", "./certs:/certs:ro"]
+    networks: { default: { aliases: ["publish-p56256-e778627.adobeaemcloud.com"] } }
+  vip:
+    image: python:3.12-alpine
+    environment: { NAME: vip }
+    command: ["python", "-u", "/echo.py"]
+    volumes: ["./echo.py:/echo.py:ro", "./certs:/certs:ro"]
+    networks: { default: { aliases: ["wordpress.cru.org"] } }
+  old:
+    build: https://github.com/CruGlobal/cruorg_proxy.git#78e732d
+    image: cruorg-proxy-old:local
+    depends_on: [redis, aem, vip]
+    ports: ["18080:80"]
+    volumes: ["./nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro"]
+    environment:
+      STORAGE_REDIS_HOST: redis
+      STORAGE_REDIS_PORT: "6379"
+      STORAGE_REDIS_DB_INDEX: "3"
+      VANITY_KEY: cruorg:vanities
+      REWRITES_KEY: cruorg:regex
+      UPSTREAMS_KEY: cruorg:upstreams
+      DEFAULT_PROXY_TARGET: https://publish-p56256-e778627.adobeaemcloud.com
+      VIP_ADDR: https://wordpress.cru.org
+      AEM_EDGE_KEY: test-edge-key
+  new:
+    build: ../..
+    image: cruorg-proxy-new:local
+    depends_on: [aem, vip]
+    ports: ["18081:80", "16000:6000"]
+    volumes: ["./certs:/certs:ro", "./rules.json:/rules/rules.json:ro"]
+    environment:
+      RULES_FILE: /rules/rules.json
+      RULES_REFRESH: 5s
+      RULES_MIN_RELOAD: 2s
+      DEFAULT_PROXY_TARGET: https://publish-p56256-e778627.adobeaemcloud.com
+      VIP_ADDR: https://wordpress.cru.org
+      AEM_EDGE_KEY: test-edge-key
+      SSL_CERT_FILE: /certs/cert.pem
