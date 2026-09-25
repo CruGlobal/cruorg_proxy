@@ -2,7 +2,7 @@
 """Probe a live cruorg_proxy environment through CloudFront and record answers.
 
 Usage:
-  stage_probe.py <redirects.tf> <base-url> <out.jsonl> [--delay 0.25]
+  stage_probe.py <redirects.tf> <base-url> <out.jsonl> [--delay 0.8]
   stage_probe.py --compare <before.jsonl> <after.jsonl>
 
 Run it against stage before and after an image change and compare the two
@@ -61,29 +61,53 @@ def cases(hashes):
     return out
 
 
+CANARY = "/us/en.html"
+
+
+def waf_blocked(r):
+    return r.status == 403 and (r.getheader("x-cache") or "").startswith("Error from cloudfront")
+
+
+def fetch(host, path):
+    c = http.client.HTTPSConnection(host, timeout=30)
+    c.request("GET", path, headers={"User-Agent": "cruorg-proxy-stage-probe"})
+    r = c.getresponse()
+    r.read()
+    return r
+
+
 def probe(tf_path, base, out_path, delay):
     u = urllib.parse.urlparse(base)
     rows = cases(parse_hashes(tf_path))
     with open(out_path, "w") as out:
         for i, (path, tag) in enumerate(rows):
-            for attempt in range(3):
+            r, err, waf = None, None, False
+            for attempt in range(4):
                 try:
-                    c = http.client.HTTPSConnection(u.hostname, timeout=30)
-                    c.request("GET", path, headers={"User-Agent": "cruorg-proxy-stage-probe"})
-                    r = c.getresponse()
-                    r.read()
-                    break
+                    r = fetch(u.hostname, path)
                 except OSError as e:
-                    if attempt == 2:
-                        r = None
-                        err = str(e)
+                    r, err = None, str(e)
                     time.sleep(2)
+                    continue
+                if not waf_blocked(r):
+                    break
+                # A WAF rule blocks this URL for everyone (scanner-looking
+                # paths such as /cgi-bin/). That answer is the same before and
+                # after an image change, so record it. If a known-good page is
+                # blocked too, the rate rule has blocked this IP: wait it out.
+                if not waf_blocked(fetch(u.hostname, CANARY)):
+                    waf = True
+                    break
+                print(f"IP blocked by the WAF at request {i + 1}; waiting 330s", file=sys.stderr)
+                time.sleep(330)
             rec = {"tag": tag, "req": path}
             if r is None:
                 rec["error"] = err
+            elif waf_blocked(r) and not waf:
+                rec["error"] = "IP blocked by the CloudFront WAF"
             else:
                 rec.update(status=r.status, location=r.getheader("Location"),
-                           backend=backend(r))
+                           backend="waf" if waf else backend(r))
             out.write(json.dumps(rec) + "\n")
             if (i + 1) % 100 == 0:
                 print(f"{i + 1}/{len(rows)}", file=sys.stderr)
@@ -115,5 +139,5 @@ if __name__ == "__main__":
     if sys.argv[1] == "--compare":
         compare(sys.argv[2], sys.argv[3])
     else:
-        d = float(sys.argv[sys.argv.index("--delay") + 1]) if "--delay" in sys.argv else 0.25
+        d = float(sys.argv[sys.argv.index("--delay") + 1]) if "--delay" in sys.argv else 0.8
         probe(sys.argv[1], sys.argv[2], sys.argv[3], d)

@@ -34,5 +34,5 @@ local fakes. Run it before and after an image change and compare:
     test/parity/stage_probe.py --compare before.jsonl after.jsonl
 
 It compares status and `Location`, and for proxied requests whether AEM or
-WordPress VIP answered. It waits 0.25s between requests so the WAF rate rules
-don't trip.
+WordPress VIP answered. It waits 0.8s between requests to stay under the WAF's 500-per-5-minutes rate rule, and
+pauses and retries if the WAF blocks it anyway.
