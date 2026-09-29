@@ -57,7 +57,8 @@ task; a purge only reaches the task that served the request. For local runs,
 ```
 
 Logs are JSON on stdout with Datadog's standard attributes (`http.status_code`,
-`network.client.ip`, `duration`). Metrics are Prometheus text on `:6000/metrics`
+`http.url_details`, `network.client.ip`, `duration`). A request logs at WARN
+for 4xx and ERROR for 5xx, as the nginx pipeline did. Metrics are Prometheus text on `:6000/metrics`
 (`cruproxy_*`), scraped by Datadog's openmetrics check.
 
 ## The loop

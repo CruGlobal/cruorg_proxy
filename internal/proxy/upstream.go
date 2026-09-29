@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"net/http/httputil"
 	"net/url"
 	"strings"
@@ -78,6 +79,7 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			for k, v := range cfg.Headers {
 				pr.Out.Header.Set(k, v)
 			}
+			pr.Out = withTiming(pr.In, pr.Out)
 		},
 		Transport: transport,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -103,6 +105,20 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			ErrorPage(w, status)
 		},
 	}, nil
+}
+
+// withTiming records, for the access log, how long the upstream took to give
+// a new connection and to send its first response byte.
+func withTiming(in, out *http.Request) *http.Request {
+	info, start := requestInfo(in), time.Now()
+	return out.WithContext(httptrace.WithClientTrace(out.Context(), &httptrace.ClientTrace{
+		GotConn: func(c httptrace.GotConnInfo) {
+			if !c.Reused {
+				info.upstreamConnect.Store(int64(time.Since(start)))
+			}
+		},
+		GotFirstResponseByte: func() { info.upstreamHeader.Store(int64(time.Since(start))) },
+	}))
 }
 
 // StatusClientClosedRequest is nginx's non-standard code for a request the

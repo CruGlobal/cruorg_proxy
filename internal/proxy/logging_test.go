@@ -37,7 +37,7 @@ func (b *lockedBuffer) requestLog(t *testing.T, path string) map[string]any {
 	defer b.mu.Unlock()
 	for _, line := range strings.Split(b.buf.String(), "\n") {
 		var rec map[string]any
-		if json.Unmarshal([]byte(line), &rec) != nil || rec["msg"] != "request" {
+		if json.Unmarshal([]byte(line), &rec) != nil {
 			continue
 		}
 		if h, ok := rec["http"].(map[string]any); ok && h["url"] == path {
@@ -185,4 +185,56 @@ func TestLogKeepsOriginalURL(t *testing.T) {
 	_ = resp.Body.Close()
 	time.Sleep(50 * time.Millisecond)
 	logs.requestLog(t, "/cru-nav.js")
+}
+
+func TestLogContext(t *testing.T) {
+	srv, logs := stack(t, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNotFound) })
+	for _, p := range []string{"/ctx?utm_source=a&x=1&x=2", "/v?utm_source=a"} {
+		resp, err := http.Get(srv.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+	}
+	time.Sleep(50 * time.Millisecond)
+
+	rec := logs.requestLog(t, "/ctx?utm_source=a&x=1&x=2")
+	h, _ := rec["http"].(map[string]any)
+	ud, _ := h["url_details"].(map[string]any)
+	qs, _ := ud["queryString"].(map[string]any)
+	switch {
+	case rec["level"] != "WARN":
+		t.Errorf("level %v, want WARN for a 404", rec["level"])
+	case rec["msg"] != "GET /ctx?utm_source=a&x=1&x=2 404":
+		t.Errorf("msg %q", rec["msg"])
+	case ud["path"] != "/ctx" || qs["utm_source"] != "a":
+		t.Errorf("url_details %v", ud)
+	case len(qs["x"].([]any)) != 2:
+		t.Errorf("repeated param %v, want a list", qs["x"])
+	case h["version"] != "1.1":
+		t.Errorf("version %v", h["version"])
+	case rec["upstream_connect_duration"] == nil || rec["upstream_header_duration"] == nil:
+		t.Errorf("upstream timings missing: %v", rec)
+	}
+
+	rec = logs.requestLog(t, "/v?utm_source=a")
+	if rec["level"] != "INFO" || rec["msg"] != "GET /v?utm_source=a 301 -> /w" {
+		t.Errorf("redirect logged as %v %q", rec["level"], rec["msg"])
+	}
+	if _, ok := rec["upstream_header_duration"]; ok {
+		t.Error("redirect has an upstream timing")
+	}
+}
+
+func TestUpstreamErrorLogsAtError(t *testing.T) {
+	srv, logs := stack(t, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusBadGateway) })
+	resp, err := http.Get(srv.URL + "/bad")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	time.Sleep(50 * time.Millisecond)
+	if rec := logs.requestLog(t, "/bad"); rec["level"] != "ERROR" {
+		t.Fatalf("level %v, want ERROR for a 502", rec["level"])
+	}
 }
