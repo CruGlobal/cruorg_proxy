@@ -79,12 +79,7 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			}
 			pr.Out.Header.Set("X-Forwarded-Proto", proto)
 			pr.Out.Header.Set("X-Real-IP", trusted.ClientIP(pr.In))
-			if cfg.ClientIPHeader != "" {
-				pr.Out.Header.Set(cfg.ClientIPHeader, trusted.ClientIP(pr.In))
-			}
-			for k, v := range cfg.Headers {
-				pr.Out.Header.Set(k, v)
-			}
+			cfg.setHeaders(pr.Out.Header, trusted.ClientIP(pr.In))
 			pr.Out = withTiming(pr.In, pr.Out)
 		},
 		Transport: transport,
@@ -111,6 +106,17 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			ErrorPage(w, status)
 		},
 	}, nil
+}
+
+// setHeaders adds this upstream's own headers, including the visitor's IP
+// when ClientIPHeader is set.
+func (cfg UpstreamConfig) setHeaders(h http.Header, clientIP string) {
+	if cfg.ClientIPHeader != "" {
+		h.Set(cfg.ClientIPHeader, clientIP)
+	}
+	for k, v := range cfg.Headers {
+		h.Set(k, v)
+	}
 }
 
 // withTiming records, for the access log, how long the upstream took to give
