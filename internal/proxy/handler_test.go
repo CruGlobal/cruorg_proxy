@@ -37,7 +37,7 @@ func echo(t *testing.T, name string) *httptest.Server {
 			Name: name, Host: r.Host, SNI: r.TLS.ServerName, Path: r.URL.RequestURI(),
 			XFF: r.Header.Get("X-Forwarded-For"), XFP: r.Header.Get("X-Forwarded-Proto"),
 			XFH: r.Header.Get("X-Forwarded-Host"), XRI: r.Header.Get("X-Real-IP"),
-			EdgeKey: r.Header.Get("X-Aem-Edge-Key"), TCI: r.Header.Get("True-Client-IP"),
+			EdgeKey: r.Header.Get("X-Aem-Edge-Key"), TCI: r.Header.Get("True-Client-Ip"),
 			VIPKey: r.Header.Get("X-Vip-Proxy-Verification"),
 		})
 	}))
