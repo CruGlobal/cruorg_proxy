@@ -178,7 +178,10 @@ func TestAEMRequest(t *testing.T) {
 
 func TestVIPRequest(t *testing.T) {
 	h, _ := newProxy(t, true)
-	s := decode(t, do(h, "/wp-admin/x", map[string]string{"X-AEM-Edge-Key": "spoofed", "True-Client-IP": "198.51.100.1"}))
+	s := decode(
+		t,
+		do(h, "/wp-admin/x", map[string]string{"X-AEM-Edge-Key": "spoofed", "True-Client-IP": "198.51.100.1"}),
+	)
 	switch {
 	case s.Name != "vip":
 		t.Fatalf("upstream %q", s.Name)
