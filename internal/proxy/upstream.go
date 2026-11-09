@@ -36,6 +36,9 @@ type UpstreamConfig struct {
 	OriginHost bool
 	// Headers are set on every request to this upstream only.
 	Headers map[string]string
+	// ClientIPHeader, when set, carries the visitor's IP to this upstream,
+	// replacing any value the visitor sent.
+	ClientIPHeader string
 	// RootCAs overrides the system roots; tests use it for a local TLS server.
 	RootCAs *x509.CertPool
 }
@@ -76,6 +79,9 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			}
 			pr.Out.Header.Set("X-Forwarded-Proto", proto)
 			pr.Out.Header.Set("X-Real-IP", trusted.ClientIP(pr.In))
+			if cfg.ClientIPHeader != "" {
+				pr.Out.Header.Set(cfg.ClientIPHeader, trusted.ClientIP(pr.In))
+			}
 			for k, v := range cfg.Headers {
 				pr.Out.Header.Set(k, v)
 			}

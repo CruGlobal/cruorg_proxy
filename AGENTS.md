@@ -20,7 +20,9 @@ Health check: `GET /monitor.html` (200 once rules are loaded, 503 before).
    - else **upstreams** (regex on the lowercased path) picks the upstream by
      env var name; the default is `DEFAULT_PROXY_TARGET`.
 3. AEM gets `Host` = its origin host plus `X-AEM-Edge-Key`. WordPress VIP gets
-   the visitor's `Host` and never the AEM key. Upstream TLS is verified.
+   the visitor's `Host` and never the AEM key, plus the visitor's IP in
+   `True-Client-IP` and, when set, `X-VIP-Proxy-Verification`. Upstream TLS is
+   verified.
 4. The raw path and query go upstream unchanged.
 
 Redirects drop the query string unless their key (vanity path or regex pattern)
@@ -110,7 +112,8 @@ There are **no database migrations**; Terraform declares
   `prod/redirects.tf`, written to `rules.json`). Adding a redirect or upstream
   rule is a cru-terraform PR; the plan shows the per-key diff.
 - Runtime settings (`DEFAULT_PROXY_TARGET`, `VIP_ADDR`, `RULES_BUCKET`,
-  `RULES_KEY`) are ECS parameters there; `AEM_EDGE_KEY` is a secret in SSM
+  `RULES_KEY`) are ECS parameters there; `AEM_EDGE_KEY` and
+  `VIP_PROXY_VERIFICATION` are secrets in SSM
   under `/ecs/cruorg_proxy/<env>/`. Never commit secrets.
 - A Terraform change to parameters or the task definition lands on the **next**
   deploy. If nothing else changed, use cru-deploy's **Deploy Candidate (v2)**
@@ -123,6 +126,7 @@ There are **no database migrations**; Terraform declares
 | `RULES_REFRESH`, `RULES_MIN_RELOAD` | `60s`, `10s` | check interval, purge rate limit |
 | `DEFAULT_PROXY_TARGET`, `VIP_ADDR` | | AEM and WordPress VIP origins |
 | `AEM_EDGE_KEY` | | sent to AEM only |
+| `VIP_PROXY_VERIFICATION` | | sent to VIP only, so VIP trusts `True-Client-IP` |
 | `TRUSTED_PROXIES` | `10.16.0.0/16` | CIDRs allowed to set X-Forwarded-For |
 | `LISTEN_ADDR`, `METRICS_ADDR` | `:80`, `:6000` | |
 | `LOG_LEVEL` | `INFO` | |
