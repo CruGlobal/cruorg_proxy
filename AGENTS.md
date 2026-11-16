@@ -21,7 +21,8 @@ Health check: `GET /monitor.html` (200 once rules are loaded, 503 before).
      env var name; the default is `DEFAULT_PROXY_TARGET`.
 3. AEM gets `Host` = its origin host plus `X-AEM-Edge-Key`. WordPress VIP gets
    the visitor's `Host` and never the AEM key, plus the visitor's IP in
-   `True-Client-IP` and, when set, `X-VIP-Proxy-Verification`. Upstream TLS is
+   `True-Client-IP` and, when set, `X-VIP-Proxy-Verification`. A visitor's own
+   copies of those two headers are dropped for every upstream. Upstream TLS is
    verified.
 4. The raw path and query go upstream unchanged.
 

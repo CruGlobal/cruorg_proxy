@@ -155,7 +155,10 @@ func TestAEMRequest(t *testing.T) {
 	h, aem := newProxy(t, true)
 	s := decode(
 		t,
-		do(h, "/us/en.html?a=1", map[string]string{"X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https"}),
+		do(h, "/us/en.html?a=1", map[string]string{
+			"X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https",
+			"True-Client-IP": "198.51.100.1", "X-VIP-Proxy-Verification": "spoofed",
+		}),
 	)
 	aemHost := strings.TrimPrefix(aem.URL, "https://")
 	switch {
@@ -173,6 +176,8 @@ func TestAEMRequest(t *testing.T) {
 		t.Errorf("XFP %q XFH %q", s.XFP, s.XFH)
 	case s.XRI != "192.168.48.1":
 		t.Errorf("X-Real-IP %q (peer is not a trusted proxy)", s.XRI)
+	case s.TCI != "" || s.VIPKey != "":
+		t.Errorf("visitor's True-Client-IP %q / VIP key %q passed through to AEM", s.TCI, s.VIPKey)
 	}
 }
 
