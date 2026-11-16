@@ -79,7 +79,7 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 			}
 			pr.Out.Header.Set("X-Forwarded-Proto", proto)
 			pr.Out.Header.Set("X-Real-IP", trusted.ClientIP(pr.In))
-			cfg.setHeaders(pr.Out.Header, trusted.ClientIP(pr.In))
+			cfg.setHeaders(pr.Out.Header, trusted.ViewerIP(pr.In))
 			pr.Out = withTiming(pr.In, pr.Out)
 		},
 		Transport: transport,

@@ -102,9 +102,13 @@ func newProxy(t *testing.T, loaded bool) (http.Handler, *httptest.Server) {
 }
 
 func do(h http.Handler, path string, hdr map[string]string) *httptest.ResponseRecorder {
+	return doFrom(h, "192.168.48.1:5555", path, hdr)
+}
+
+func doFrom(h http.Handler, peer, path string, hdr map[string]string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	req.Host = "www.cru.org"
-	req.RemoteAddr = "192.168.48.1:5555"
+	req.RemoteAddr = peer
 	for k, v := range hdr {
 		req.Header.Set(k, v)
 	}
@@ -178,6 +182,25 @@ func TestAEMRequest(t *testing.T) {
 		t.Errorf("X-Real-IP %q (peer is not a trusted proxy)", s.XRI)
 	case s.TCI != "" || s.VIPKey != "":
 		t.Errorf("visitor's True-Client-IP %q / VIP key %q passed through to AEM", s.TCI, s.VIPKey)
+	}
+}
+
+// The prod path: CloudFront -> ALB -> proxy, so X-Forwarded-For ends at a
+// CloudFront edge and the visitor is in CloudFront-Viewer-Address.
+func TestVIPRequestThroughCloudFront(t *testing.T) {
+	h, _ := newProxy(t, true)
+	cases := []struct{ name, viewer, want string }{
+		{"IPv4", "203.0.113.9:51234", "203.0.113.9"},
+		{"IPv6", "2001:db8::9:51234", "2001:db8::9"},
+	}
+	for _, c := range cases {
+		s := decode(t, doFrom(h, "10.16.3.4:5555", "/wp-json/x", map[string]string{
+			"X-Forwarded-For":           "203.0.113.9, 130.176.183.118",
+			"Cloudfront-Viewer-Address": c.viewer,
+		}))
+		if s.TCI != c.want {
+			t.Errorf("%s: True-Client-IP %q, want the visitor %q, not the CloudFront edge", c.name, s.TCI, c.want)
+		}
 	}
 }
 
