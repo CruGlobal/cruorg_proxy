@@ -55,7 +55,7 @@ func TestViewerIP(t *testing.T) {
 		r.RemoteAddr = c.peer
 		r.Header.Set("X-Forwarded-For", cfHop)
 		if c.viewer != "" {
-			r.Header.Set("CloudFront-Viewer-Address", c.viewer)
+			r.Header.Set("Cloudfront-Viewer-Address", c.viewer)
 		}
 		if got := trusted.ViewerIP(r); got != c.want {
 			t.Errorf("%s: got %q, want %q", c.name, got, c.want)

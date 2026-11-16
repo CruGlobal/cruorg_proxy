@@ -59,7 +59,7 @@ func PeerIP(r *http.Request) string {
 func (t TrustedProxies) ViewerIP(r *http.Request) string {
 	peer, err := netip.ParseAddr(PeerIP(r))
 	if err == nil && t.contains(peer) {
-		if ip, ok := viewerAddr(r.Header.Get("CloudFront-Viewer-Address")); ok {
+		if ip, ok := viewerAddr(r.Header.Get("Cloudfront-Viewer-Address")); ok {
 			return ip
 		}
 	}
