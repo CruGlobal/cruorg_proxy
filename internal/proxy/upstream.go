@@ -108,16 +108,12 @@ func NewUpstream(cfg UpstreamConfig, trusted TrustedProxies, logger *slog.Logger
 	}, nil
 }
 
-// proxyOnlyHeaders are set by the proxy alone; a visitor's copies never reach
-// any upstream.
-var proxyOnlyHeaders = []string{"True-Client-IP", "X-VIP-Proxy-Verification"}
-
 // setHeaders adds this upstream's own headers, including the visitor's IP
 // when ClientIPHeader is set.
 func (cfg UpstreamConfig) setHeaders(h http.Header, clientIP string) {
-	for _, k := range proxyOnlyHeaders {
-		h.Del(k)
-	}
+	// Only the proxy sets these; a visitor's copies never reach any upstream.
+	h.Del("True-Client-IP")
+	h.Del("X-VIP-Proxy-Verification")
 	if cfg.ClientIPHeader != "" {
 		h.Set(cfg.ClientIPHeader, clientIP)
 	}
