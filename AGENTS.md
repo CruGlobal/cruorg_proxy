@@ -89,9 +89,15 @@ in `CruGlobal/cru-deploy`.
 3. **Builds do not run on push.** `.github/workflows/pipeline-v2.yml` runs
    nightly at 05:00 UTC (or on dispatch), builds one environment-agnostic
    `candidate-*` image, and deploys it to **release-candidate** (stage.cru.org).
-4. **Production is a manual promote**: dispatch **Promote (v2)** in
-   `CruGlobal/cru-deploy` (it checks you have push access here). Rollback is
-   `rollback.yml` there. Promoted images get a permanent `release-*` tag.
+   That deploy is started through the deploy gate (`deploys.cru.org/gate`) with
+   the run's GitHub OIDC token. The deploy job has no org token, so if the gate
+   refuses or can't be reached, the deploy fails.
+4. **Production is a manual promote**: `cru app promote -n cruorg_proxy`.
+   Rollback is `cru app rollback -n cruorg_proxy <release>`. Both run in
+   `CruGlobal/cru-deploy`. The CLI signs you in with Okta and sends the request
+   through the deploy gate, which allows it only for the developers listed in
+   this app's Terraform; push access to this repo does not count. Promoted
+   images get a permanent `release-*` tag.
 
 Deploy, promote, rollback and failure notices go to **#devops-notifications**.
 The image is identical in every environment; the only baked-in value is
@@ -113,8 +119,9 @@ There are **no database migrations**; Terraform declares
   `RULES_KEY`) are ECS parameters there; `AEM_EDGE_KEY` is a secret in SSM
   under `/ecs/cruorg_proxy/<env>/`. Never commit secrets.
 - A Terraform change to parameters or the task definition lands on the **next**
-  deploy. If nothing else changed, use cru-deploy's **Deploy Candidate (v2)**
-  with `force: true`. A change to the rules themselves needs no deploy.
+  deploy. If nothing else changed, ask DevOps to run cru-deploy's **Deploy
+  Candidate (v2)** with `force: true`. A change to the rules themselves needs
+  no deploy.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
