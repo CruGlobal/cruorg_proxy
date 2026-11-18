@@ -36,8 +36,8 @@ updates:
       prefix: "ci"
       include: "scope"
     ignore:
-      # CruGlobal/.github majors are fleet-wide moves: v1 -> v2 would break the
-      # parked v1 workflow, and the @v2 pipeline refs move only on purpose.
+      # CruGlobal/.github majors are fleet-wide moves: the @v2 pipeline refs
+      # move only on purpose.
       - dependency-name: "CruGlobal/.github*"
         update-types: ["version-update:semver-major"]
 
