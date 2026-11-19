@@ -52,6 +52,35 @@ func PeerIP(r *http.Request) string {
 	return host
 }
 
+// ViewerIP returns the visitor's IP from CloudFront-Viewer-Address when a
+// trusted proxy sent the request, else ClientIP. X-Forwarded-For stops at the
+// CloudFront edge because only the ALB is trusted; CloudFront sets this header
+// itself, and the ALB only accepts CloudFront.
+func (t TrustedProxies) ViewerIP(r *http.Request) string {
+	peer, err := netip.ParseAddr(PeerIP(r))
+	if err == nil && t.contains(peer) {
+		if ip, ok := viewerAddr(r.Header.Get("Cloudfront-Viewer-Address")); ok {
+			return ip
+		}
+	}
+	return t.ClientIP(r)
+}
+
+// viewerAddr strips the port from CloudFront's "ip:port", whose IPv6 form has
+// no brackets.
+func viewerAddr(v string) (string, bool) {
+	v = strings.TrimSpace(v)
+	if ap, err := netip.ParseAddrPort(v); err == nil {
+		return ap.Addr().Unmap().String(), true
+	}
+	if i := strings.LastIndexByte(v, ':'); i > 0 {
+		if ip, err := netip.ParseAddr(v[:i]); err == nil {
+			return ip.Unmap().String(), true
+		}
+	}
+	return "", false
+}
+
 // ClientIP walks X-Forwarded-For right to left from the peer and returns the
 // first address that is not a trusted proxy, like nginx's real_ip_recursive.
 // A visitor can prepend anything to the header, so the left end is never read

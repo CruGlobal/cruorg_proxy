@@ -25,6 +25,8 @@ type seen struct {
 	XFH     string `json:"xfh"`
 	XRI     string `json:"xri"`
 	EdgeKey string `json:"edge_key"`
+	TCI     string `json:"tci"`
+	VIPKey  string `json:"vip_key"`
 }
 
 // echo is a TLS upstream that reports what it received.
@@ -35,7 +37,8 @@ func echo(t *testing.T, name string) *httptest.Server {
 			Name: name, Host: r.Host, SNI: r.TLS.ServerName, Path: r.URL.RequestURI(),
 			XFF: r.Header.Get("X-Forwarded-For"), XFP: r.Header.Get("X-Forwarded-Proto"),
 			XFH: r.Header.Get("X-Forwarded-Host"), XRI: r.Header.Get("X-Real-IP"),
-			EdgeKey: r.Header.Get("X-Aem-Edge-Key"),
+			EdgeKey: r.Header.Get("X-Aem-Edge-Key"), TCI: r.Header.Get("True-Client-Ip"),
+			VIPKey: r.Header.Get("X-Vip-Proxy-Verification"),
 		})
 	}))
 	srv.TLS = &tls.Config{MinVersion: tls.VersionTLS12}
@@ -62,7 +65,10 @@ func newProxy(t *testing.T, loaded bool) (http.Handler, *httptest.Server) {
 	ups := map[string]http.Handler{}
 	for name, cfg := range map[string]proxy.UpstreamConfig{
 		store.DefaultUpstream: {Name: "aem", URL: aem.URL, OriginHost: true, Headers: map[string]string{"X-AEM-Edge-Key": "k"}},
-		"VIP_ADDR":            {Name: "vip", URL: vip.URL},
+		"VIP_ADDR": {
+			Name: "vip", URL: vip.URL, ClientIPHeader: "True-Client-IP",
+			Headers: map[string]string{"X-VIP-Proxy-Verification": "v"},
+		},
 	} {
 		srv := aem
 		if name == "VIP_ADDR" {
@@ -96,9 +102,13 @@ func newProxy(t *testing.T, loaded bool) (http.Handler, *httptest.Server) {
 }
 
 func do(h http.Handler, path string, hdr map[string]string) *httptest.ResponseRecorder {
+	return doFrom(h, "192.168.48.1:5555", path, hdr)
+}
+
+func doFrom(h http.Handler, peer, path string, hdr map[string]string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	req.Host = "www.cru.org"
-	req.RemoteAddr = "192.168.48.1:5555"
+	req.RemoteAddr = peer
 	for k, v := range hdr {
 		req.Header.Set(k, v)
 	}
@@ -149,7 +159,10 @@ func TestAEMRequest(t *testing.T) {
 	h, aem := newProxy(t, true)
 	s := decode(
 		t,
-		do(h, "/us/en.html?a=1", map[string]string{"X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https"}),
+		do(h, "/us/en.html?a=1", map[string]string{
+			"X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https",
+			"True-Client-IP": "198.51.100.1", "X-VIP-Proxy-Verification": "spoofed",
+		}),
 	)
 	aemHost := strings.TrimPrefix(aem.URL, "https://")
 	switch {
@@ -167,12 +180,36 @@ func TestAEMRequest(t *testing.T) {
 		t.Errorf("XFP %q XFH %q", s.XFP, s.XFH)
 	case s.XRI != "192.168.48.1":
 		t.Errorf("X-Real-IP %q (peer is not a trusted proxy)", s.XRI)
+	case s.TCI != "" || s.VIPKey != "":
+		t.Errorf("visitor's True-Client-IP %q / VIP key %q passed through to AEM", s.TCI, s.VIPKey)
+	}
+}
+
+// The prod path: CloudFront -> ALB -> proxy, so X-Forwarded-For ends at a
+// CloudFront edge and the visitor is in CloudFront-Viewer-Address.
+func TestVIPRequestThroughCloudFront(t *testing.T) {
+	h, _ := newProxy(t, true)
+	cases := []struct{ name, viewer, want string }{
+		{"IPv4", "203.0.113.9:51234", "203.0.113.9"},
+		{"IPv6", "2001:db8::9:51234", "2001:db8::9"},
+	}
+	for _, c := range cases {
+		s := decode(t, doFrom(h, "10.16.3.4:5555", "/wp-json/x", map[string]string{
+			"X-Forwarded-For":           "203.0.113.9, 130.176.183.118",
+			"Cloudfront-Viewer-Address": c.viewer,
+		}))
+		if s.TCI != c.want {
+			t.Errorf("%s: True-Client-IP %q, want the visitor %q, not the CloudFront edge", c.name, s.TCI, c.want)
+		}
 	}
 }
 
 func TestVIPRequest(t *testing.T) {
 	h, _ := newProxy(t, true)
-	s := decode(t, do(h, "/wp-admin/x", map[string]string{"X-AEM-Edge-Key": "spoofed"}))
+	s := decode(
+		t,
+		do(h, "/wp-admin/x", map[string]string{"X-AEM-Edge-Key": "spoofed", "True-Client-IP": "198.51.100.1"}),
+	)
 	switch {
 	case s.Name != "vip":
 		t.Fatalf("upstream %q", s.Name)
@@ -180,6 +217,10 @@ func TestVIPRequest(t *testing.T) {
 		t.Errorf("Host %q, want the visitor's host", s.Host)
 	case s.EdgeKey == "k":
 		t.Error("AEM edge key sent to WordPress")
+	case s.TCI != "192.168.48.1":
+		t.Errorf("True-Client-IP %q, want the visitor's IP over the spoofed one", s.TCI)
+	case s.VIPKey != "v":
+		t.Errorf("X-VIP-Proxy-Verification %q", s.VIPKey)
 	}
 }
 

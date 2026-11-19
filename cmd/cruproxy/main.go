@@ -126,7 +126,18 @@ func upstreams(trusted proxy.TrustedProxies, logger *slog.Logger) (map[string]ht
 		Headers:    headers,
 	}}
 	if vip := os.Getenv("VIP_ADDR"); vip != "" {
-		cfgs = append(cfgs, proxy.UpstreamConfig{Name: "VIP_ADDR", URL: vip})
+		// VIP trusts True-Client-IP only alongside its proxy verification key.
+		vipHeaders := map[string]string{}
+		// A trailing newline from SSM would make Go refuse the header and 502 every VIP request.
+		if key := strings.TrimSpace(os.Getenv("VIP_PROXY_VERIFICATION")); key != "" {
+			vipHeaders["X-VIP-Proxy-Verification"] = key
+		}
+		cfgs = append(cfgs, proxy.UpstreamConfig{
+			Name:           "VIP_ADDR",
+			URL:            vip,
+			Headers:        vipHeaders,
+			ClientIPHeader: "True-Client-IP",
+		})
 	}
 	out := make(map[string]http.Handler, len(cfgs))
 	for _, c := range cfgs {
