@@ -136,12 +136,8 @@ There are **no database migrations**; Terraform declares
 
 ## Leftovers you can ignore
 
-- `.github/workflows/build-deploy-ecs.yml` is the **parked v1 workflow**,
-  dispatch-only on purpose. Its build fails with `AccessDenied` now that v1's
-  build identity is retired; keep it as the record of how the app used to ship.
-- That workflow pins `CruGlobal/.github` at `@v1`. **Don't bump it to `@v2`**:
-  v2 of those workflows is a different pipeline. Dependabot ignores that major
-  version; close any PR that proposes it.
+- The v1 workflow, `.github/workflows/build-deploy-ecs.yml`, is gone.
+  `pipeline-v2.yml` is the only build; don't bring back a push-triggered one.
 - There is no `staging` branch or `On Staging` label any more. Anything that
   mentions them, or a merge-bot, describes the v1 flow.
 - Until cleanup finishes, cru-terraform still writes the old Redis hashes too,
